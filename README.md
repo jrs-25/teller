@@ -31,4 +31,18 @@ python scripts/demo.py --notes   # run every fixture ticket and print what Telle
 | `src/teller/webhook.py` | The thin new-ticket webhook |
 | `tests/fixtures/tickets.json` | Zendesk-shaped tickets with fake "canary" values |
 
+## The safety test
+
+[`tests/test_safety.py`](tests/test_safety.py) and [`tests/test_config.py`](tests/test_config.py) implement rules S1–S17 from RFC §5. Each assertion names the rule it guards, so a breach fails CI with a message like `S1: compliance or gray-zone decision carried a member-facing draft`.
+
+**How we know the tests work:** each safety mechanism was broken on purpose, and the suite caught it.
+
+| Broken on purpose | Caught by |
+|---|---|
+| Safety gate disabled | S1 (a buggy handler drafting for compliance), S7, gate fails closed |
+| Redaction disabled | S5 (canary values in logs, records, ticket writes, model inputs), S6 |
+| Keyword tripwire disabled | S1, S2, S4 |
+| Send lock 3 removed | S9 |
+| Safety floor rule removed | S10 |
+
 The classifier, compliance check, and drafter are deliberately simple rules-based stand-ins behind model-shaped interfaces, as the brief allows. The architecture around them is what's being proven.

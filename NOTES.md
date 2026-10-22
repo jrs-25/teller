@@ -16,7 +16,7 @@
 - [x] §0.2 Assumptions, §0.3 Open decisions (compliance line)
 - Parked: logging & reporting bucket (see Decisions)
 
-**Next step (resume here):** Scaffold done (pipeline, config + safety floor, gate, adapters, mocks, webhook, fixtures, 6 pipeline tests, demo script, CI). Next: `tests/test_safety.py` (rules S1-S17 from RFC §5) + `tests/test_config.py` + webhook test → "safety test" milestone commit. Then revise the RFC from what the build showed, then §0 summary, §6 Part 3, §7, AI Leverage Log.
+**Next step (resume here):** Safety test done: 48 tests (S1-S17, config floor, webhook), each safety mechanism mutation-checked (README table). Next: revise the RFC from what the build showed (stage for uncategorized escalations; explain low check score next to a keyword match in the note), then §0 summary/context, §6 Part 3, §7 what's next, AI Leverage Log, and the `suspected_fraud` config-only commit.
 
 ## Decisions made
 - Classify, then apply policy. The model never chooses the action.
@@ -64,5 +64,6 @@
 - Joel noticed the KB wasn't really incorporated, and flagged that ingesting a KB is a big effort. Result: wrap the existing help-center search, no ingestion in v1, "no article, no draft" so weak search costs usefulness not safety, and build ingestion only when the "no KB answer" rate justifies it. Joel limited the prototype to a mock KB + one rule.
 - Joel drew on prior experience with an analogous KB (for VA claims processors): RAG needs a full chunking/ingestion strategy, and KBs are often out of date. That reinforced no-ingestion in v1 and added stale-content safeguards Claude hadn't proposed (age warnings, no quoting rates/fees, KB health check before general_qa leaves shadow). Joel kept the personal experience out of the RFC; use it in the live session.
 - Joel sensed something essential was missing about the member profile service (named twice in the brief). Claude had let it drop to "not in v1" without stating the cost; the gap was that it's the path to resolving account issues and so to the 80% goal. Kept out of v1, but the RFC now states the cost and designs its data and failure rules.
+- Claude checked its own safety tests by breaking each mechanism on purpose (gate, redaction, tripwire, send lock, safety floor) and confirming the right tests fail. The first attempt gave a false alarm caused by stale Python bytecode (a same-length edit restored within one second); Claude caught it, cleared the cache, and reran cleanly.
 - Joel had Claude turn the brief into a working constitution (`CLAUDE.md`, committed for reviewers): priority order, a "build test" defaulting to stub/describe/hand off, and a standing instruction to call out scope creep and push back. First application: Claude flagged that the webhook endpoint itself is plumbing; the value is in fetch-on-read, re-read before write-back, and the loop/idempotency guard.
 - Joel chose to write the RFC first as the build spec. Claude agreed but flagged the risk of over-polishing it and added a "prototype contract" section to connect the RFC to the code.
