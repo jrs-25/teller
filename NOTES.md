@@ -10,13 +10,13 @@
 - [x] §1 One pipeline, many categories: drafted (incl. categories, eligibility, safety floor, one file per category)
 - [x] §2 Safety & data handling: drafted (layers table, redaction, compliance detection + gray zone, gate, prompt injection, CI test, detect/contain/recover, FDE handoff)
 - [x] §3 Workflow & rollout: drafted (new/wrapped/left alone table; ticketing integration; what Teller writes; kill switch; rollout ladder + why category-then-volume + first sequence)
-- [ ] §4 Degraded mode & throughput (mostly settled by "beside": doing nothing is safe; escalate/fallback outcomes defined)
-- [ ] §5 Prototype contract
+- [x] §4 Degraded mode & throughput: drafted (dependency table, failure = no write, low confidence, throughput + human-review math)
+- [x] §5 Prototype contract: drafted (Intake, Decision, TicketUpdate, rules S1–S17 as tests, described-not-built list, repo layout)
 - [ ] §0 Summary, context
 - [x] §0.2 Assumptions, §0.3 Open decisions (compliance line)
 - Parked: logging & reporting bucket (see Decisions)
 
-**Next step (resume here):** §4 Degraded mode & throughput (profile piece already written; remaining: model/LLM provider, KB, ticketing API, low confidence, bursts). Then §5 Prototype contract, §0 summary/context, §6 Part 3, §7 what's next. Then scaffold the prototype (items 1–3 + safety test first).
+**Next step (resume here):** Scaffold the prototype from RFC §5 (items 1–3 + safety test first). After the build: revise RFC from what the code showed, then §0 summary/context, §6 Part 3, §7 what's next, AI Leverage Log.
 
 ## Decisions made
 - Classify, then apply policy. The model never chooses the action.
@@ -44,6 +44,7 @@
 - **§2 proposals accepted, in pipeline order:** redaction first (only the redactor sees raw text; member data never reaches the model provider); tripwire + compliance check; gate checks twice + rejects drafts containing redaction tokens; CI safety test incl. fixture "compliance complaint containing an account number still goes to compliance".
 - **Knowledge base** (RFC §3 "Using the knowledge base without ingesting it"): only draft_response uses it; wrap the help center's existing search via a KB adapter `search(query)`, no ingestion in v1 (Joel: ingesting a KB is no small feat); no article → no draft → escalate; drafts cite sources (gate checks); public help center only; KB down → no draft; build ingestion only when "no KB answer" escalation rate blocks the 80% goal. **Prototype: mock KB (few fake articles, keyword lookup) + no-match→escalate test only.** Rest described. Stale-KB additions (RFC §3): show article age + warn if old; never quote rates/APYs/fees (link or escalate); KB owners review most-relied-on articles before general_qa leaves shadow; "possibly outdated" list → logging bucket.
 - **Member profile service: NOT used in v1** (Joel). Listed under "left alone" (RFC §3); new subsection "The member profile service, after v1" with the two future uses (safety flags → no draft; products held → right article), accepted v1 risk (open-dispute member could get a routine draft; covered by compliance checks + CSR review), and a precondition for `send`. Degraded-mode prototype should use the KB (or ticketing API) as the failing dependency instead. **Added after Joel asked what was essential about it:** the profile service is how account issues (one of the brief's four intake types) get resolved, so leaving it out caps v1's reach toward 80%. RFC now states that cost (shadow measures account-issue share → likely first post-v1 investment), and designs (not builds) its data rules (§2: allowlist of flags/product types, never balances/account numbers) and failure behavior (§4).
+- **Degraded mode** (RFC §4): failure → write nothing, record reason; notes only when Teller has something useful (low confidence guess, gray flag, no KB answer). Prototype: mock deps that can fail; tests: KB down → no draft; compliance check down → no draft, but keyword-matched compliance still routes.
 - **Prototype must include:** a CI test that every ticketing adapter exposes only the allowed write methods, so a new adapter can't add a public reply (the RFC §3 promises this). Zendesk-shaped JSON fixtures (webhook, ticket API response) for routine, feedback, compliance, and a disguised compliance case, with fake canary account numbers.
 
 ## Open questions

@@ -497,13 +497,148 @@ Teller starts out doing nothing on a CSR's behalf. It earns each step with evide
 
 ## 4. Degraded mode and throughput
 
-_TODO: the rest of §4._
+### Decision
+
+Because Teller sits beside the ticketing system (§3), **doing nothing is always safe**: a ticket Teller doesn't touch stays in the manual queue, exactly as today. So every failure has the same destination, a human, and the only design question is how much useful context Teller can still add on the way. Teller never guesses to fill a gap: no source means no draft, and an unclear compliance answer means no draft.
+
+### When a dependency is slow or down
+
+Every call has a timeout. A dependency that keeps failing is skipped for a cool-down period (a circuit breaker), so a slow service causes fast fallbacks instead of a pile-up.
+
+| Dependency | If it's slow or down | What still works |
+|---|---|---|
+| **Model provider** (compliance check, classifier, drafter) | Compliance check fails: **no draft**; the ticket stays with a Support human. Classifier fails: escalate. Drafter fails: escalate. | The keyword tripwire needs no model, so explicit compliance tickets still reach Compliance. |
+| **Knowledge base search** | **No draft.** Without a source, any draft would be invented (§3). | Classification and routing; product feedback and compliance routing don't need the knowledge base. |
+| **Ticketing API: read** | Teller can't see the ticket, so it writes nothing. The ticket stays in the manual queue. | Everything is retried later (queue and sweep, §3); missing a ticket is safe. |
+| **Ticketing API: write** | The single update is all or nothing (§3), so a failure leaves the ticket untouched. Retry at most twice, then leave it. On rate limiting (`429`), back off. | No half-written tickets. |
+| **Member profile service** | _After v1; see below._ | |
+
+**What a failure looks like on the ticket: nothing.** When a dependency fails, Teller writes nothing and records the reason in its decision record. A note saying "Teller couldn't help" adds clutter without helping the CSR, who handles the ticket as today. Notes are reserved for cases where Teller has something useful to say (below).
+
+### When confidence is low
+
+- **Below the category's threshold:** escalate. At `suggest` and above, Teller adds its note without a draft: its best guess at the category, and why it's unsure. That still saves the CSR some reading.
+- **Compliance gray zone:** no draft, with a "possible compliance" flag in the note (§2).
+- **No knowledge base answer:** no draft, with "no KB answer found" in the note (§3).
+- **Never:** a draft below threshold, a draft for a gray-zone case, or a low-confidence compliance case resolved as routine.
+
+### Throughput and bursts
+
+- **Teller's own load is small.** A few thousand intakes a day is a couple a minute on average; even a tenfold burst is modest. The webhook only puts the ticket ID on a queue, workers process at their own pace, and the queue absorbs bursts (§3). Model and ticketing API rate limits are the real ceiling, and each has a budget.
+- **Late is worse than never.** A ticket that has waited in Teller's queue longer than a threshold is skipped and left to the manual queue (§3). During a large burst, Teller gracefully does less instead of falling behind.
+- **The real throughput limit is human review.** At 80% of 3,000 intakes a day, CSRs approve about 2,400 drafts. At 30 seconds each, that's about 20 hours of CSR time a day; at 2 minutes each, 80 hours. How fast a CSR can trust and approve a draft matters more to the 80% goal than anything about Teller's infrastructure. That is why the note leads with the draft, its sources, a confidence tier, and exactly what to check (§3).
+
 
 **Member profile service (after v1; designed now).** v1 doesn't call it, so it can't fail in v1. When it's added: if it is slow or down, any draft that depends on account data escalates to a human, the note says account flags couldn't be checked, and the ticket can never reach `send` without a successful flag check. A routine knowledge-base answer that doesn't depend on the member's account can still be drafted.
 
 ## 5. Prototype contract
 
-_TODO: decision schema, config schema, safety invariants written as testable statements._
+The build spec for the prototype, compiled from §1–§4. The category config schema is the YAML in §1.
+
+### What goes in: `Intake`
+
+The ticketing adapter turns the vendor's ticket into this. Nothing past the adapter knows which vendor it came from.
+
+```python
+class Member:
+    member_id: str
+    auth_level: str            # "verified" required (eligibility, §1)
+    products: list[str]        # claims from the ticket, authenticated upstream
+
+class Intake:
+    ticket_id: str
+    ticket_version: str        # vendor's updated_at; the conditional update checks it (§3)
+    member: Member
+    channel: str               # "web", "email", ...
+    subject: str
+    body: str                  # raw text: only the redactor reads it (§2)
+    created_by_member: bool    # eligibility
+    has_attachments: bool      # eligibility
+    language: str              # eligibility
+    created_at: datetime
+```
+
+### What comes out: `Decision`
+
+The brief's response shape (category, action, draft or package, confidence, approval) plus what's needed to explain the decision later. A `Decision` is also the decision record. It never holds raw text.
+
+```python
+class Decision:
+    decision_id: str
+    ticket_id: str
+    ticket_version: str                  # the version Teller read
+    eligible: bool
+    category: str | None                 # an ID from config/categories/, or None
+    action: Literal["draft_response", "route_with_package", "escalate", "none"]
+    confidence: float | None
+    confidence_tier: Literal["HIGH", "MEDIUM", "LOW"] | None
+    compliance_zone: Literal["clear", "gray", "not_compliance", "unknown"]
+    compliance_signals: list[str]        # e.g. ["keyword:cfpb", "check:0.82"], never quoted text
+    draft: str | None                    # member-facing; redacted; never for compliance or gray
+    package: dict | None                 # built from the category's package_fields only
+    destination: str | None              # an existing route name, mapped to a group by the adapter
+    sources: list[str]                   # knowledge base article IDs the draft cites
+    requires_human_approval: bool        # always True in v1
+    rollout_stage: str
+    reasons: list[str]                   # why: "below_threshold", "kb_unavailable", "gate:token_in_draft", ...
+    config_version: str
+    model_version: str
+    created_at: datetime
+```
+
+**Who approved it** lives in the ticketing system: the CSR who sent the reply, and when. The decision record joins to it by `ticket_id`. Together they answer the brief's question: why this intake was answered, routed, or escalated, and who approved it.
+
+### What Teller writes: one `TicketUpdate`
+
+```python
+class TicketUpdate:
+    ticket_id: str
+    if_version: str            # rejected if the ticket changed since Teller read it (§3)
+    internal_note: str | None
+    add_tags: list[str]        # only ["teller_processed"]
+    move_to: str | None        # destination name
+```
+
+One update per ticket, all or nothing. The adapter's write interface accepts only this. `send_public_reply` exists but is locked (§3).
+
+### The rules, as tests
+
+Each rule is a test in `tests/test_safety.py` or `tests/test_pipeline.py`. A failing test names the rule it broke.
+
+| # | Rule | From |
+|---|---|---|
+| S1 | No compliance or gray-zone decision ever carries a draft, even when the classifier misbehaves and returns one | §2 |
+| S2 | A keyword match always makes the ticket compliance, whatever the classifier says | §2 |
+| S3 | A disguised compliance complaint with no keywords is caught by the compliance check | §2 |
+| S4 | If the compliance check fails, there is no draft, and keyword-matched compliance still routes to Compliance | §2, §4 |
+| S5 | No canary value appears in logs, decision records, ticket updates, packages, or anything sent to a model | §2 |
+| S6 | A compliance complaint containing an account number still reaches Compliance (redaction doesn't hide it) | §2 |
+| S7 | The gate rejects any draft containing a redaction token | §2 |
+| S8 | With v1 config, no member-visible write ever happens | §2, §3 |
+| S9 | No configuration lets a compliance ticket reach `send_public_reply` | §3 |
+| S10 | Every config that breaks the safety floor fails to load | §1 |
+| S11 | The ticketing adapter exposes no member-visible write except the locked one | §3 |
+| S12 | An ineligible ticket gets no write at all | §1 |
+| S13 | If the ticket changed between read and write, the update is rejected; Teller reprocesses at most twice, then leaves it | §3 |
+| S14 | A ticket already tagged `teller_processed` is skipped | §3 |
+| S15 | No matching knowledge base article, or the knowledge base is down: no draft | §3, §4 |
+| S16 | Below the category's threshold: no draft | §4 |
+| S17 | `off` writes nothing; `shadow` writes only the `teller_processed` tag (no note, no move) | §3 |
+
+Plus the three required paths through one pipeline: a routine question gets a draft, product feedback is routed with a summary and a thank-you draft, and a compliance complaint is routed with no draft.
+
+**Described, not built:** the prompt-injection link check (§2), the category regression check (§1), the member profile service (§3), the durable queue and sweep (§3), measuring agreement and promotion (§3).
+
+### Repo layout
+
+```
+config/categories/        one YAML file per category (§1)
+.github/CODEOWNERS        category file → owning team
+src/teller/               pipeline, redaction, compliance checks, classifier, handlers, gate,
+                          adapters (ticketing, knowledge base), webhook endpoint
+tests/                    test_safety.py, test_pipeline.py, test_config.py
+tests/fixtures/           Zendesk-shaped tickets with canary values
+```
 
 ## 6. Bringing the business team along
 
