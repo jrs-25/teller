@@ -2,7 +2,7 @@
 
 import pytest
 
-from teller.config import ConfigError, check_safety_floor
+from teller.config import ConfigError, check_routes, check_safety_floor, load_routes
 
 
 def change(config, category, **fields):
@@ -39,3 +39,12 @@ def test_s10_compliance_category_must_exist(config):
 
 def test_stricter_than_the_floor_is_fine(config):
     check_safety_floor(change(config, "general_qa", confidence_threshold=0.95, rollout_stage="shadow"))
+
+
+def test_every_destination_is_an_existing_route(config):
+    check_routes(config, load_routes("zendesk"))
+
+
+def test_unknown_destination_fails_to_load(config):
+    with pytest.raises(ConfigError, match="not a known route"):
+        check_routes(change(config, "product_feedback", destination="nowhere_queue"), load_routes("zendesk"))

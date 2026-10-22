@@ -39,6 +39,7 @@ class KnowledgeBaseSettings(BaseModel):
 
 class GlobalSettings(BaseModel):
     auto_send_enabled: bool
+    uncategorized_stage: str
     compliance_check: ComplianceBands
     knowledge_base: KnowledgeBaseSettings
     max_write_attempts: int
@@ -99,6 +100,18 @@ def check_safety_floor(config: TellerConfig) -> None:
             raise ConfigError(
                 f"safety floor: {policy.id} package_fields not allowed: {sorted(unknown)}"
             )
+
+
+def load_routes(vendor: str, config_dir: Path = CONFIG_DIR) -> dict[str, int]:
+    """Destination name → the vendor's group ID. Only the ticketing adapter uses this."""
+    return _read(config_dir / "routes.yaml")[vendor]
+
+
+def check_routes(config: TellerConfig, routes: dict[str, int]) -> None:
+    """Every destination a category names must be an existing route."""
+    for policy in config.categories.values():
+        if policy.destination and policy.destination not in routes:
+            raise ConfigError(f"{policy.id}: destination {policy.destination} is not a known route")
 
 
 def _read(path: Path) -> dict:

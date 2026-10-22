@@ -110,7 +110,7 @@ class Teller:
             HANDLERS[policy.action](ctx)
 
         gate.enforce(d, policy)
-        d.rollout_stage = policy.rollout_stage if policy else "suggest"
+        d.rollout_stage = policy.rollout_stage if policy else self.config.settings.uncategorized_stage
         found_sensitive = subject.found_sensitive_data or body.found_sensitive_data
         return d, self._build_update(d, intake, policy, found_sensitive)
 

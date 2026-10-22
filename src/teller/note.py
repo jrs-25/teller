@@ -45,6 +45,7 @@ def render_note(
     lines += ["WHY", f"  Category: {category_label}."]
     if decision.compliance_zone in ("clear", "gray"):
         lines.append(f"  Compliance signals: {', '.join(decision.compliance_signals)}.")
+        lines.append("  (Either check alone is enough. A keyword match routes here even if the check scores low.)")
     lines += [f"  {w}" for w in why] + [""]
 
     if decision.sources:

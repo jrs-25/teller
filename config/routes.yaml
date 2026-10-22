@@ -1,0 +1,6 @@
+# Destination names used in category files, mapped to the ticketing system's
+# existing groups (RFC §3). Vendor-specific: read only by the ticketing adapter.
+# Every category's destination must appear here, or config fails to load.
+zendesk:
+  compliance_legal_queue: 3002
+  product_feedback_queue: 3003

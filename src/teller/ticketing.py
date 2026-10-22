@@ -56,9 +56,8 @@ class MockZendesk(TicketingAdapter):
     FIELD_MEMBER_ID = 7001
     FIELD_AUTH_LEVEL = 7002
     FIELD_PRODUCTS = 7003
-    GROUPS = {"compliance_legal_queue": 3002, "product_feedback_queue": 3003}
-
-    def __init__(self, tickets: dict[str, dict]):
+    def __init__(self, tickets: dict[str, dict], routes: dict[str, int]):
+        self.routes = routes  # destination name → Zendesk group ID (config/routes.yaml)
         self.tickets = {tid: copy.deepcopy(t) for tid, t in tickets.items()}
         self.updates: list[TicketUpdate] = []        # applied writes
         self.public_comments: list[tuple[str, str]] = []
@@ -81,12 +80,12 @@ class MockZendesk(TicketingAdapter):
         raw = self.tickets[update.ticket_id]["ticket"]
         if raw["updated_at"] != update.if_version:
             raise VersionConflict(update.ticket_id)
-        if update.move_to and update.move_to not in self.GROUPS:
+        if update.move_to and update.move_to not in self.routes:
             raise ValueError(f"no existing route named {update.move_to}")
         self.updates.append(update)
         raw["tags"] = sorted(set(raw["tags"]) | set(update.add_tags))
         if update.move_to:
-            raw["group_id"] = self.GROUPS[update.move_to]
+            raw["group_id"] = self.routes[update.move_to]
         raw["updated_at"] = raw["updated_at"] + "+teller"
 
     def _post_public_comment(self, ticket_id: str, text: str) -> None:

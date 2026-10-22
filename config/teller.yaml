@@ -14,5 +14,8 @@ knowledge_base:
   min_relevance: 0.3       # below this, no article: no draft
   stale_after_days: 180    # older articles get a "check before sending" warning
 
+# Rollout stage for escalations where no category applies (RFC §3).
+uncategorized_stage: suggest
+
 # Ticketing writes (RFC §3)
 max_write_attempts: 3      # first try plus two retries on a version conflict
