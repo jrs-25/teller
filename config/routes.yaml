@@ -4,3 +4,4 @@
 zendesk:
   compliance_legal_queue: 3002
   product_feedback_queue: 3003
+  fraud_ops_queue: 3004

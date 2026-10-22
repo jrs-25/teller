@@ -5,3 +5,4 @@
 /config/categories/general_qa.yaml        @bankrate/customer-support
 /config/compliance_keywords.yaml          @bankrate/compliance-legal
 /config/teller.yaml                       @bankrate/compliance-legal @bankrate/customer-support
+/config/categories/suspected_fraud.yaml   @bankrate/fraud-ops

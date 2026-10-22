@@ -1,0 +1,13 @@
+id: suspected_fraud
+description: >
+  Member reports activity they don't recognize, an account takeover,
+  or a stolen card or credentials.
+hints: [fraud, unrecognized, didn't make, did not make, not me, stolen, hacked, someone else, account takeover]
+action: route_with_package
+member_response_allowed: false
+destination: fraud_ops_queue
+package_fields: [category, summary, intake_ref]
+confidence_threshold: 0.3
+precedence: 90
+rollout_stage: shadow              # starts in shadow, like every new category
+owner: fraud-ops
