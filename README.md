@@ -3,6 +3,7 @@
 A prototype support triage & resolution agent for Customer Support. Teller sits beside the ticketing system: it reads each new ticket, decides what it is, and writes one internal note (a cited draft reply, or a routing decision with context) for a human to act on. In v1, nothing reaches a member without a CSR sending it.
 
 - **[RFC.md](RFC.md)**: the design. Start here.
+- **[AI_LEVERAGE_LOG.md](AI_LEVERAGE_LOG.md)**: how AI was used, and where I overrode it.
 - **[CLAUDE.md](CLAUDE.md)**: the working constitution used to steer AI-assisted development.
 - **[NOTES.md](NOTES.md)**: decision log and AI Leverage Log candidates.
 
@@ -22,7 +23,8 @@ python scripts/demo.py --notes   # run every fixture ticket and print what Telle
 
 | Path | What |
 |---|---|
-| `config/categories/` | One policy file per category, each owned by its team (`.github/CODEOWNERS`) |
+| `config/categories/` | One policy file per category, each owned by its team (`.github/CODEOWNERS`). `suspected_fraud` was added as a config-only commit |
+| `config/routes.yaml` | Destination names → the ticketing system's existing groups |
 | `config/teller.yaml`, `config/compliance_keywords.yaml` | Global settings and the compliance keyword list |
 | `src/teller/pipeline.py` | The one shared pipeline; the seam is `_resolve_policy` |
 | `src/teller/config.py` | Config loading and the safety floor |

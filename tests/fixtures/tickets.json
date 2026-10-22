@@ -530,5 +530,49 @@
     "requester": {
       "locale": "es-MX"
     }
+  },
+  "suspected_fraud": {
+    "ticket": {
+      "id": 48225,
+      "created_at": "2026-10-22T14:03:09Z",
+      "updated_at": "2026-10-22T14:03:09Z",
+      "subject": "Charges I didn't make",
+      "description": "There are two charges on my card I didn't make. I think someone else is using it.",
+      "status": "new",
+      "requester_id": 90021,
+      "submitter_id": 90021,
+      "assignee_id": null,
+      "group_id": 3001,
+      "tags": [],
+      "via": {
+        "channel": "web"
+      },
+      "custom_fields": [
+        {
+          "id": 7001,
+          "value": "mbr_5521"
+        },
+        {
+          "id": 7002,
+          "value": "verified"
+        },
+        {
+          "id": 7003,
+          "value": [
+            "savings",
+            "cd"
+          ]
+        }
+      ]
+    },
+    "comments": [
+      {
+        "body": "There are two charges on my card I didn't make. I think someone else is using it.",
+        "attachments": []
+      }
+    ],
+    "requester": {
+      "locale": "en-US"
+    }
   }
 }

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | Draft |
-| **Author** | _TODO_ |
+| **Author** | _TODO: name_ |
 | **Team** | AI Transformation Office, embedded with Customer Support |
 | **Partners** | Customer Support lead, Compliance & Legal, Product, Forward Deployed Engineering |
 
@@ -11,11 +11,13 @@
 
 ## 0. Summary
 
-_TODO: write last, a one-paragraph version of the whole proposal._
+Teller is a triage and resolution agent that sits **beside** Customer Support's ticketing system, not in front of it. For each new ticket it decides what the ticket is, then writes one internal note: a draft reply cited from the help center, or a routing decision with a context package for Product or Compliance & Legal. In v1 a CSR sends every reply. Every ticket goes through **one shared pipeline**; each category's policy is one config file owned by its team, and a new category (suspected fraud is in this repo as a config-only commit) needs no code. Safety is **structural**: redaction runs first, two independent compliance checks can only push toward Compliance, a safety gate and a config "safety floor" are enforced in code, and the ticketing integration can't reach a member. A CI test fails the build on any breach. Autonomy is **earned per category** (off → shadow → suggest → act), and if Teller fails, the ticket stays in the manual queue exactly as today. The most important open decision is where the compliance line sits, which belongs to Compliance & Legal (§0.3).
 
 ## 0.1 Context and the real bottleneck
 
-_TODO._ Key point to make: leadership wants about 80% of intakes resolved through AI, *and* a human approves everything that reaches a member. Put together, those mean the 80% target is limited by **human review throughput**, not by model accuracy. Teller has to make each approval fast and trustworthy, not just generate drafts.
+Today every intake is read and handled by hand, so routine questions wait behind each other, and rare but important items (sharp product feedback, a complaint alleging a legal violation) get the same slow, inconsistent handling as everything else.
+
+Leadership wants about 80% of intakes resolved through AI, *and* a human approving anything that reaches a member. Put together, **the 80% goal is limited by human review, not by the model.** At a few thousand intakes a day, CSRs would approve around 2,400 drafts; the difference between a 30-second and a 2-minute review is the difference between about 20 and 80 hours of CSR time a day (§4). So Teller's job isn't just to produce drafts. It's to make each approval fast and trustworthy: one note per ticket, cited sources, a confidence tier, and exactly what to check before sending (§3).
 
 ## 0.2 Assumptions
 
@@ -152,22 +154,23 @@ So a careless or malicious edit to `compliance.yaml` fails the build instead of 
 
 ### Adding a category: suspected fraud
 
-Adding fraud is one new file, `config/categories/suspected_fraud.yaml`, plus one CODEOWNERS line, and needs no pipeline change. In this repo it lands as a separate commit with the full test suite still passing:
+Adding fraud is one new category file, one line in `config/routes.yaml`, and one CODEOWNERS line. It needs no pipeline change. In this repo it is a separate commit ("Add suspected_fraud: configuration only") that touches nothing in `src/` or `tests/`; the full suite still passed and no existing fixture changed category:
 
 ```yaml
-- id: suspected_fraud
-  description: Member reports unrecognized activity, account takeover, or a scam.
-  action: route_with_package
-  member_response_allowed: false
-  destination: fraud_ops_queue
-  package_fields: [category, summary, reported_activity_type, intake_ref]
-  confidence_threshold: 0.0
-  precedence: 90
-  rollout_stage: shadow     # starts in shadow, like every new category
-  owner: fraud-ops
+id: suspected_fraud
+description: Member reports activity they don't recognize, an account takeover, or a stolen card.
+hints: [fraud, unrecognized, didn't make, not me, stolen, hacked, someone else, account takeover]
+action: route_with_package
+member_response_allowed: false
+destination: fraud_ops_queue
+package_fields: [category, summary, intake_ref]
+confidence_threshold: 0.3
+precedence: 90
+rollout_stage: shadow     # starts in shadow, like every new category
+owner: fraud-ops
 ```
 
-**What does need code:** a new *kind* of action (for example, "freeze the account"), or a destination in a system with no adapter yet. Both are deliberate: new powers and new integrations should get engineering review. New combinations of existing powers should not need it.
+**What does need code:** a new *kind* of action (for example, "freeze the account"), a destination in a system with no adapter yet, or a new context-package field. (Each package field has a builder in code that uses redacted data only, so a new field is reviewed for what it could expose. The first draft of this example asked for a `reported_activity_type` field; building it showed that would have been a code change.) Both are deliberate: new powers and new integrations should get engineering review. New combinations of existing powers should not need it.
 
 **Categories affect each other, and that's intended (described, not built).** The classifier sees every category at once, so adding `suspected_fraud` *should* take tickets that would otherwise land in `general_qa`: fraud reports that today get a routine answer. The risk isn't that categories interact. It's that a config change shifts tickets nobody meant to move. So any new or edited category runs a regression check against a labeled set of past tickets before it merges:
 
@@ -410,7 +413,7 @@ Ticketing ◀──API: update ticket── Teller     "here's my decision"
 | `add_internal_note(id, text)` | API endpoints, auth, pagination, rate-limit headers |
 | `add_tags(id, tags)` | Custom field IDs mapped to member ID, auth level, products |
 | `move_to_group(id, destination)` | How "internal note" and conditional update are expressed |
-| `send_public_reply(id, text)`: locked behind the three checks above; unreachable in v1 | Mapping config destinations (e.g. `compliance_legal_queue`) to the vendor's group IDs |
+| `send_public_reply(id, text)`: locked behind the three checks above; unreachable in v1 | Mapping config destinations (e.g. `compliance_legal_queue`) to the vendor's group IDs, read from `config/routes.yaml` |
 
 Moving from Zendesk to Salesforce Service Cloud, Freshdesk, or whatever a merger brings means writing one new adapter and re-mapping destinations. The pipeline, category config, safety gate, and tests don't change. And the CI safety test runs against the adapter contract, so a new adapter can't expose any member-visible write other than the locked `send_public_reply` without the build failing.
 
@@ -624,15 +627,28 @@ Each rule is a test in `tests/test_safety.py` or `tests/test_pipeline.py`. A fai
 | S15 | No matching knowledge base article, or the knowledge base is down: no draft | §3, §4 |
 | S16 | Below the category's threshold: no draft | §4 |
 | S17 | `off` writes nothing; `shadow` writes only the `teller_processed` tag (no note, no move) | §3 |
+| S18 | Every category's destination is an existing route; an unknown one fails at load | §3 |
 
 Plus the three required paths through one pipeline: a routine question gets a draft, product feedback is routed with a summary and a thank-you draft, and a compliance complaint is routed with no draft.
 
 **Described, not built:** the prompt-injection link check (§2), the category regression check (§1), the member profile service (§3), the durable queue and sweep (§3), measuring agreement and promotion (§3).
 
+### What building it changed
+
+The prototype was built from this contract, and building it corrected the design in a few places:
+
+- **Routes were hard-coded.** The first adapter mapped destination names to Zendesk group IDs in code, so adding fraud would have needed a code change. The mapping moved to `config/routes.yaml`, and a destination that isn't a known route now fails at load (S18). This was found while preparing the config-only fraud commit, which is the point of making that commit.
+- **Package fields are code, on purpose.** See "What does need code" in §1.
+- **Escalations with no category needed a rollout stage.** It is now an explicit setting (`uncategorized_stage`), not an implicit default.
+- **A keyword match can sit next to a low compliance-check score.** Correct (either check alone is enough), but confusing for a Compliance reader, so the note now says so.
+- **Shadow mode's write was ambiguous.** S17 now says exactly what shadow writes: the `teller_processed` tag and nothing else.
+- **The safety test was itself tested.** Each safety mechanism (gate, redaction, keyword tripwire, send lock, safety floor) was removed on purpose; each removal failed the right tests (see README).
+
 ### Repo layout
 
 ```
 config/categories/        one YAML file per category (§1)
+config/routes.yaml        destination → the vendor's existing groups (§3)
 .github/CODEOWNERS        category file → owning team
 src/teller/               pipeline, redaction, compliance checks, classifier, handlers, gate,
                           adapters (ticketing, knowledge base), webhook endpoint
@@ -642,8 +658,26 @@ tests/fixtures/           Zendesk-shaped tickets with canary values
 
 ## 6. Bringing the business team along
 
-_TODO (after the build)_
+_Working with the Customer Support lead and two experienced agents, one of whom is skeptical that AI should touch member conversations at all._
+
+**Define "good" with them, in their words.** Before Teller drafts anything, the three of them label a sample of past tickets: what category it was, what should have happened, and what a good reply looked like. That becomes a short rubric for a good resolution (accurate, cited, right tone, no guessing about the member's account) and the labeled set Teller is measured against. The skeptic's objections are the most useful input here; each one becomes a rule, a threshold, or a test case.
+
+**Validate together, blind first.** In shadow mode the CSRs see nothing, and Teller's decisions are compared with what they actually did. Once a week we review the disagreements together. Each one ends in one of three places: Teller was wrong (fix config or thresholds), the knowledge base was wrong (send it to its owner), or the team itself was inconsistent (settle it, write it down). The team sees Teller get corrected by them.
+
+**Earn trust where Teller takes work off their plate, not where it speaks for them.** Routing comes first: forwarding feedback and compliance tickets is tedious, never reaches a member, and is easy to undo. Drafts come later, on a share of volume, for the best-documented questions. Promotion criteria are agreed up front, with the skeptic, and each step needs the evidence, not faith. Objecting is cheap (one "flag decision" macro) and has consequences (overrides demote a category automatically), so pushback visibly changes the system.
+
+**Hand off ownership so it sticks.** The Support lead owns the general Q&A and product feedback config files (CODEOWNERS), the promotion decisions, and the kill switch in the ticketing system's own settings, with no engineering needed. The weekly disagreement review becomes the team's ritual, with the skeptic as its quality reviewer. Forward Deployed Engineering owns the code. The handoff has worked when the review runs without me.
+
+**Where I'd expect friction.** Fear that Teller is a step toward replacing them, or toward measuring them on approval speed (it shouldn't be: speed targets turn review into rubber-stamping). Drafts that sound generic or wrong for Bankrate's tone. Notes that clutter tickets. Compliance & Legal getting more gray-zone noise than they'd like. The skeptic's core worry, that member conversations deserve a human, is right, and v1 keeps it true: no reply leaves without a CSR. **Along, not around:** give the skeptic the pen on the rubric and the promotion bar, and let the evidence, not me, make the case.
 
 ## 7. What I'd do next with more time
 
-_TODO_
+In rough priority order:
+
+1. **Settle the compliance line with Compliance & Legal** (§0.3): their criteria, keyword list, and labeled gray cases, then tune the bands.
+2. **Member profile service** (§3): account flags (open dispute, legal hold) as a second, non-wording compliance signal, and the path to resolving account issues, likely the biggest gap to 80%. Data and failure rules are already designed (§2, §4).
+3. **Logging and reporting:** shadow-vs-CSR agreement, draft edit rates, a permanent blind holdout, rubber-stamping signals, and a "possibly outdated" article list for KB owners. Most outcome reporting can come from the ticketing system itself, compared on `teller_processed`.
+4. **Real models behind the existing interfaces,** with an evaluation set built from the labeled tickets, and the regression check for category changes (§1).
+5. **Production plumbing for FDE:** durable queue and sweep behind the webhook, a production redaction service, the prompt-injection link check (§2), and log and tracing configuration.
+6. **Follow-up messages:** rerun the compliance checks when a member adds a message to a Teller-touched ticket.
+7. **Knowledge base ingestion,** only if "no KB answer" escalations turn out to be what stands between Teller and 80% (§3).

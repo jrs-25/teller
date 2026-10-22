@@ -7,16 +7,12 @@
 4. Revise the RFC after the build; write §3 rollout narrative, §6 (Part 3), and the AI Leverage Log
 
 ## Status
-- [x] §1 One pipeline, many categories: drafted (incl. categories, eligibility, safety floor, one file per category)
-- [x] §2 Safety & data handling: drafted (layers table, redaction, compliance detection + gray zone, gate, prompt injection, CI test, detect/contain/recover, FDE handoff)
-- [x] §3 Workflow & rollout: drafted (new/wrapped/left alone table; ticketing integration; what Teller writes; kill switch; rollout ladder + why category-then-volume + first sequence)
-- [x] §4 Degraded mode & throughput: drafted (dependency table, failure = no write, low confidence, throughput + human-review math)
-- [x] §5 Prototype contract: drafted (Intake, Decision, TicketUpdate, rules S1–S17 as tests, described-not-built list, repo layout)
-- [ ] §0 Summary, context
-- [x] §0.2 Assumptions, §0.3 Open decisions (compliance line)
-- Parked: logging & reporting bucket (see Decisions)
+- [x] RFC §0–§7 drafted and revised after the build (§5 "What building it changed")
+- [x] Prototype: scaffold, safety test (52 tests, mutation-checked), routes in config, `suspected_fraud` config-only commit
+- [x] AI_LEVERAGE_LOG.md drafted
+- Parked: logging & reporting bucket (see Decisions; now RFC §7 item 3)
 
-**Next step (resume here):** Safety test done: 48 tests (S1-S17, config floor, webhook), each safety mechanism mutation-checked (README table). Next: revise the RFC from what the build showed (stage for uncategorized escalations; explain low check score next to a keyword match in the note), then §0 summary/context, §6 Part 3, §7 what's next, AI Leverage Log, and the `suspected_fraud` config-only commit.
+**Next step (resume here):** Joel's review pass: fill in the RFC Author field; rewrite §6 (Part 3) and AI_LEVERAGE_LOG.md in Joel's own voice; read the RFC end to end for anything Joel can't defend live; decide when to make the repo public or add reviewers (`gh repo edit --visibility public`).
 
 ## Decisions made
 - Classify, then apply policy. The model never chooses the action.

@@ -53,3 +53,18 @@ def test_low_confidence_escalates_with_a_note_and_no_draft(teller):
     assert d.action == "escalate" and d.draft is None
     assert "below_threshold" in d.reasons
     assert teller.ticketing.updates  # the note still helps the CSR
+
+
+def test_fraud_added_by_config_starts_in_shadow_and_never_drafts(teller):
+    d = teller.process(by_id("suspected_fraud"))
+    assert d.category == "suspected_fraud"
+    assert d.draft is None
+    [update] = teller.ticketing.updates
+    assert update.add_tags == [PROCESSED_TAG] and update.internal_note is None and update.move_to is None
+
+
+def test_fraud_at_act_routes_to_fraud_ops(tickets, config):
+    teller = build_mock_teller(tickets, with_stage(config, "act", categories={"suspected_fraud"}))
+    teller.process(by_id("suspected_fraud"))
+    [update] = teller.ticketing.updates
+    assert update.move_to == "fraud_ops_queue"
