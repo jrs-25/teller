@@ -1,0 +1,7 @@
+# Each category's policy is owned by the team it affects (RFC §1).
+# Team handles are illustrative.
+/config/categories/compliance.yaml        @bankrate/compliance-legal
+/config/categories/product_feedback.yaml  @bankrate/product
+/config/categories/general_qa.yaml        @bankrate/customer-support
+/config/compliance_keywords.yaml          @bankrate/compliance-legal
+/config/teller.yaml                       @bankrate/compliance-legal @bankrate/customer-support

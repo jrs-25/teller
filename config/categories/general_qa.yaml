@@ -1,0 +1,13 @@
+id: general_qa
+description: >
+  Routine questions about products, rates, policies, or how-to, including
+  account questions the knowledge base answers.
+hints: [how do i, how can i, what is, what's, when, can i, question, penalty, reset, password, withdraw, how long]
+action: draft_response
+member_response_allowed: true
+destination: null                  # stays with Support
+package_fields: []
+confidence_threshold: 0.8
+precedence: 10
+rollout_stage: act
+owner: customer-support

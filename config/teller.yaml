@@ -1,0 +1,18 @@
+# Global settings. Owned jointly by Compliance & Legal and the Support lead (see CODEOWNERS).
+
+# Lock 1 of 3 on member-visible replies (RFC §3). Off in v1.
+auto_send_enabled: false
+
+# Compliance check score bands (RFC §2). Placeholders until Compliance & Legal
+# set the line (RFC §0.3).
+compliance_check:
+  route_at: 0.7   # at or above: clear compliance, route to Compliance
+  gray_at: 0.3    # at or above (and below route_at): gray zone, no draft
+
+# Knowledge base (RFC §3)
+knowledge_base:
+  min_relevance: 0.3       # below this, no article: no draft
+  stale_after_days: 180    # older articles get a "check before sending" warning
+
+# Ticketing writes (RFC §3)
+max_write_attempts: 3      # first try plus two retries on a version conflict

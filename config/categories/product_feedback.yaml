@@ -1,0 +1,13 @@
+id: product_feedback
+description: >
+  Suggestions, feature requests, or praise or criticism of how a product
+  or the site works.
+hints: [suggest, suggestion, feature, would be great, wish, app, website, feedback, love, confusing, should add]
+action: route_with_package
+member_response_allowed: true      # a short thank-you draft, sent by whoever works the queue
+destination: product_feedback_queue
+package_fields: [category, summary, intake_ref]
+confidence_threshold: 0.6
+precedence: 50
+rollout_stage: act
+owner: product

@@ -1,0 +1,17 @@
+# Keyword tripwire (RFC §2). Owned by Compliance & Legal.
+# A match always makes the ticket compliance, whatever the classifier says.
+# Matching is case-insensitive on whole words or phrases.
+keywords:
+  - cfpb
+  - consumer financial protection bureau
+  - regulator
+  - attorney general
+  - lawyer
+  - attorney
+  - lawsuit
+  - sue
+  - legal action
+  - discrimination
+  - discriminated
+  - fair lending
+  - better business bureau

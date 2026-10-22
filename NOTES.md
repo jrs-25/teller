@@ -16,7 +16,7 @@
 - [x] §0.2 Assumptions, §0.3 Open decisions (compliance line)
 - Parked: logging & reporting bucket (see Decisions)
 
-**Next step (resume here):** Scaffold the prototype from RFC §5 (items 1–3 + safety test first). After the build: revise RFC from what the code showed, then §0 summary/context, §6 Part 3, §7 what's next, AI Leverage Log.
+**Next step (resume here):** Scaffold done (pipeline, config + safety floor, gate, adapters, mocks, webhook, fixtures, 6 pipeline tests, demo script, CI). Next: `tests/test_safety.py` (rules S1-S17 from RFC §5) + `tests/test_config.py` + webhook test → "safety test" milestone commit. Then revise the RFC from what the build showed, then §0 summary, §6 Part 3, §7, AI Leverage Log.
 
 ## Decisions made
 - Classify, then apply policy. The model never chooses the action.

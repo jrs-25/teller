@@ -1,0 +1,534 @@
+{
+  "routine_question": {
+    "ticket": {
+      "id": 48213,
+      "created_at": "2026-10-22T14:03:09Z",
+      "updated_at": "2026-10-22T14:03:09Z",
+      "subject": "Question about my CD early withdrawal",
+      "description": "Hi, if I withdraw money from my 12-month CD early, what's the penalty? My account number is 4417-2290-1183. Thanks.",
+      "status": "new",
+      "requester_id": 90021,
+      "submitter_id": 90021,
+      "assignee_id": null,
+      "group_id": 3001,
+      "tags": [],
+      "via": {
+        "channel": "web"
+      },
+      "custom_fields": [
+        {
+          "id": 7001,
+          "value": "mbr_5521"
+        },
+        {
+          "id": 7002,
+          "value": "verified"
+        },
+        {
+          "id": 7003,
+          "value": [
+            "savings",
+            "cd"
+          ]
+        }
+      ]
+    },
+    "comments": [
+      {
+        "body": "Hi, if I withdraw money from my 12-month CD early, what's the penalty? My account number is 4417-2290-1183. Thanks.",
+        "attachments": []
+      }
+    ],
+    "requester": {
+      "locale": "en-US"
+    }
+  },
+  "product_feedback": {
+    "ticket": {
+      "id": 48214,
+      "created_at": "2026-10-22T14:03:09Z",
+      "updated_at": "2026-10-22T14:03:09Z",
+      "subject": "Suggestion for the app",
+      "description": "It would be great if the app showed all my CD maturity dates on one screen. Right now it's confusing to find them.",
+      "status": "new",
+      "requester_id": 90021,
+      "submitter_id": 90021,
+      "assignee_id": null,
+      "group_id": 3001,
+      "tags": [],
+      "via": {
+        "channel": "web"
+      },
+      "custom_fields": [
+        {
+          "id": 7001,
+          "value": "mbr_5521"
+        },
+        {
+          "id": 7002,
+          "value": "verified"
+        },
+        {
+          "id": 7003,
+          "value": [
+            "savings",
+            "cd"
+          ]
+        }
+      ]
+    },
+    "comments": [
+      {
+        "body": "It would be great if the app showed all my CD maturity dates on one screen. Right now it's confusing to find them.",
+        "attachments": []
+      }
+    ],
+    "requester": {
+      "locale": "en-US"
+    }
+  },
+  "compliance_explicit": {
+    "ticket": {
+      "id": 48215,
+      "created_at": "2026-10-22T14:03:09Z",
+      "updated_at": "2026-10-22T14:03:09Z",
+      "subject": "Charged a fee I never agreed to",
+      "description": "You charged me a fee on account 4417-2290-1183 that I never agreed to. I'm filing a complaint with the CFPB.",
+      "status": "new",
+      "requester_id": 90021,
+      "submitter_id": 90021,
+      "assignee_id": null,
+      "group_id": 3001,
+      "tags": [],
+      "via": {
+        "channel": "web"
+      },
+      "custom_fields": [
+        {
+          "id": 7001,
+          "value": "mbr_5521"
+        },
+        {
+          "id": 7002,
+          "value": "verified"
+        },
+        {
+          "id": 7003,
+          "value": [
+            "savings",
+            "cd"
+          ]
+        }
+      ]
+    },
+    "comments": [
+      {
+        "body": "You charged me a fee on account 4417-2290-1183 that I never agreed to. I'm filing a complaint with the CFPB.",
+        "attachments": []
+      }
+    ],
+    "requester": {
+      "locale": "en-US"
+    }
+  },
+  "compliance_disguised": {
+    "ticket": {
+      "id": 48216,
+      "created_at": "2026-10-22T14:03:09Z",
+      "updated_at": "2026-10-22T14:03:09Z",
+      "subject": "Question about my application",
+      "description": "Can I ask why my loan application was declined? I think I was denied because of my age.",
+      "status": "new",
+      "requester_id": 90021,
+      "submitter_id": 90021,
+      "assignee_id": null,
+      "group_id": 3001,
+      "tags": [],
+      "via": {
+        "channel": "web"
+      },
+      "custom_fields": [
+        {
+          "id": 7001,
+          "value": "mbr_5521"
+        },
+        {
+          "id": 7002,
+          "value": "verified"
+        },
+        {
+          "id": 7003,
+          "value": [
+            "savings",
+            "cd"
+          ]
+        }
+      ]
+    },
+    "comments": [
+      {
+        "body": "Can I ask why my loan application was declined? I think I was denied because of my age.",
+        "attachments": []
+      }
+    ],
+    "requester": {
+      "locale": "en-US"
+    }
+  },
+  "compliance_gray": {
+    "ticket": {
+      "id": 48217,
+      "created_at": "2026-10-22T14:03:09Z",
+      "updated_at": "2026-10-22T14:03:09Z",
+      "subject": "Fees on my account",
+      "description": "What is this monthly fee? Nobody told me there would be a fee when I opened the account.",
+      "status": "new",
+      "requester_id": 90021,
+      "submitter_id": 90021,
+      "assignee_id": null,
+      "group_id": 3001,
+      "tags": [],
+      "via": {
+        "channel": "web"
+      },
+      "custom_fields": [
+        {
+          "id": 7001,
+          "value": "mbr_5521"
+        },
+        {
+          "id": 7002,
+          "value": "verified"
+        },
+        {
+          "id": 7003,
+          "value": [
+            "savings",
+            "cd"
+          ]
+        }
+      ]
+    },
+    "comments": [
+      {
+        "body": "What is this monthly fee? Nobody told me there would be a fee when I opened the account.",
+        "attachments": []
+      }
+    ],
+    "requester": {
+      "locale": "en-US"
+    }
+  },
+  "routine_with_ssn_and_card": {
+    "ticket": {
+      "id": 48222,
+      "created_at": "2026-10-22T14:03:09Z",
+      "updated_at": "2026-10-22T14:03:09Z",
+      "subject": "Can't sign in",
+      "description": "How do I reset my password? I tried everything. My SSN is 078-05-1120 and my card is 4111 1111 1111 1111 if you need it.",
+      "status": "new",
+      "requester_id": 90021,
+      "submitter_id": 90021,
+      "assignee_id": null,
+      "group_id": 3001,
+      "tags": [],
+      "via": {
+        "channel": "web"
+      },
+      "custom_fields": [
+        {
+          "id": 7001,
+          "value": "mbr_5521"
+        },
+        {
+          "id": 7002,
+          "value": "verified"
+        },
+        {
+          "id": 7003,
+          "value": [
+            "savings",
+            "cd"
+          ]
+        }
+      ]
+    },
+    "comments": [
+      {
+        "body": "How do I reset my password? I tried everything. My SSN is 078-05-1120 and my card is 4111 1111 1111 1111 if you need it.",
+        "attachments": []
+      }
+    ],
+    "requester": {
+      "locale": "en-US"
+    }
+  },
+  "low_confidence": {
+    "ticket": {
+      "id": 48223,
+      "created_at": "2026-10-22T14:03:09Z",
+      "updated_at": "2026-10-22T14:03:09Z",
+      "subject": "Hello",
+      "description": "I have a question.",
+      "status": "new",
+      "requester_id": 90021,
+      "submitter_id": 90021,
+      "assignee_id": null,
+      "group_id": 3001,
+      "tags": [],
+      "via": {
+        "channel": "web"
+      },
+      "custom_fields": [
+        {
+          "id": 7001,
+          "value": "mbr_5521"
+        },
+        {
+          "id": 7002,
+          "value": "verified"
+        },
+        {
+          "id": 7003,
+          "value": [
+            "savings",
+            "cd"
+          ]
+        }
+      ]
+    },
+    "comments": [
+      {
+        "body": "I have a question.",
+        "attachments": []
+      }
+    ],
+    "requester": {
+      "locale": "en-US"
+    }
+  },
+  "no_kb_answer": {
+    "ticket": {
+      "id": 48224,
+      "created_at": "2026-10-22T14:03:09Z",
+      "updated_at": "2026-10-22T14:03:09Z",
+      "subject": "Mailing address",
+      "description": "How do I update my mailing address? Quick question.",
+      "status": "new",
+      "requester_id": 90021,
+      "submitter_id": 90021,
+      "assignee_id": null,
+      "group_id": 3001,
+      "tags": [],
+      "via": {
+        "channel": "web"
+      },
+      "custom_fields": [
+        {
+          "id": 7001,
+          "value": "mbr_5521"
+        },
+        {
+          "id": 7002,
+          "value": "verified"
+        },
+        {
+          "id": 7003,
+          "value": [
+            "savings",
+            "cd"
+          ]
+        }
+      ]
+    },
+    "comments": [
+      {
+        "body": "How do I update my mailing address? Quick question.",
+        "attachments": []
+      }
+    ],
+    "requester": {
+      "locale": "en-US"
+    }
+  },
+  "has_attachment": {
+    "ticket": {
+      "id": 48218,
+      "created_at": "2026-10-22T14:03:09Z",
+      "updated_at": "2026-10-22T14:03:09Z",
+      "subject": "See attached",
+      "description": "Please see the attached letter about my account.",
+      "status": "new",
+      "requester_id": 90021,
+      "submitter_id": 90021,
+      "assignee_id": null,
+      "group_id": 3001,
+      "tags": [],
+      "via": {
+        "channel": "web"
+      },
+      "custom_fields": [
+        {
+          "id": 7001,
+          "value": "mbr_5521"
+        },
+        {
+          "id": 7002,
+          "value": "verified"
+        },
+        {
+          "id": 7003,
+          "value": [
+            "savings",
+            "cd"
+          ]
+        }
+      ]
+    },
+    "comments": [
+      {
+        "body": "Please see the attached letter about my account.",
+        "attachments": [
+          {
+            "file_name": "letter.pdf"
+          }
+        ]
+      }
+    ],
+    "requester": {
+      "locale": "en-US"
+    }
+  },
+  "unverified_email": {
+    "ticket": {
+      "id": 48219,
+      "created_at": "2026-10-22T14:03:09Z",
+      "updated_at": "2026-10-22T14:03:09Z",
+      "subject": "Question",
+      "description": "How do I reset my password? Quick question.",
+      "status": "new",
+      "requester_id": 90021,
+      "submitter_id": 90021,
+      "assignee_id": null,
+      "group_id": 3001,
+      "tags": [],
+      "via": {
+        "channel": "email"
+      },
+      "custom_fields": [
+        {
+          "id": 7001,
+          "value": "mbr_5521"
+        },
+        {
+          "id": 7002,
+          "value": "unverified"
+        },
+        {
+          "id": 7003,
+          "value": [
+            "savings",
+            "cd"
+          ]
+        }
+      ]
+    },
+    "comments": [
+      {
+        "body": "How do I reset my password? Quick question.",
+        "attachments": []
+      }
+    ],
+    "requester": {
+      "locale": "en-US"
+    }
+  },
+  "agent_created": {
+    "ticket": {
+      "id": 48220,
+      "created_at": "2026-10-22T14:03:09Z",
+      "updated_at": "2026-10-22T14:03:09Z",
+      "subject": "Phone call notes",
+      "description": "Member called asking how to reset password.",
+      "status": "new",
+      "requester_id": 90021,
+      "submitter_id": 1001,
+      "assignee_id": null,
+      "group_id": 3001,
+      "tags": [],
+      "via": {
+        "channel": "web"
+      },
+      "custom_fields": [
+        {
+          "id": 7001,
+          "value": "mbr_5521"
+        },
+        {
+          "id": 7002,
+          "value": "verified"
+        },
+        {
+          "id": 7003,
+          "value": [
+            "savings",
+            "cd"
+          ]
+        }
+      ]
+    },
+    "comments": [
+      {
+        "body": "Member called asking how to reset password.",
+        "attachments": []
+      }
+    ],
+    "requester": {
+      "locale": "en-US"
+    }
+  },
+  "not_english": {
+    "ticket": {
+      "id": 48221,
+      "created_at": "2026-10-22T14:03:09Z",
+      "updated_at": "2026-10-22T14:03:09Z",
+      "subject": "Pregunta",
+      "description": "¿Cómo restablezco mi contraseña?",
+      "status": "new",
+      "requester_id": 90021,
+      "submitter_id": 90021,
+      "assignee_id": null,
+      "group_id": 3001,
+      "tags": [],
+      "via": {
+        "channel": "web"
+      },
+      "custom_fields": [
+        {
+          "id": 7001,
+          "value": "mbr_5521"
+        },
+        {
+          "id": 7002,
+          "value": "verified"
+        },
+        {
+          "id": 7003,
+          "value": [
+            "savings",
+            "cd"
+          ]
+        }
+      ]
+    },
+    "comments": [
+      {
+        "body": "¿Cómo restablezco mi contraseña?",
+        "attachments": []
+      }
+    ],
+    "requester": {
+      "locale": "es-MX"
+    }
+  }
+}

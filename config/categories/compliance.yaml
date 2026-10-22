@@ -1,0 +1,14 @@
+id: compliance
+description: >
+  Complaints alleging a legal or regulatory violation, unfair or deceptive
+  treatment, or discrimination, or demands involving regulators, lawyers,
+  or formal disputes.
+hints: [complaint, illegal, unfair, deceptive, dispute, report you, violation]
+action: route_with_package
+member_response_allowed: false     # enforced by the safety gate and the safety floor
+destination: compliance_legal_queue
+package_fields: [category, summary, compliance_signals, intake_ref]
+confidence_threshold: 0.3          # lowest of any category (safety floor); placeholder, RFC §0.3
+precedence: 100                    # highest of any category (safety floor)
+rollout_stage: act                 # off | shadow | suggest | act | send (never for compliance)
+owner: compliance-legal
