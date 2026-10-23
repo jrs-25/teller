@@ -3,10 +3,10 @@
 A prototype support triage & resolution agent for Customer Support. Teller sits beside the ticketing system: it reads each new ticket, decides what it is, and writes one internal note that leads with a one-line "why" (with a cited draft reply, a routing decision with context, or the reason it held back) for a human to act on. In v1, nothing reaches a member without a CSR sending it.
 
 ## Deliverables
-- **[RFC.md](RFC.md)**: the design. Start here.
+- **[RFC.md](RFC.md)**: The TL;DR-ish. Start here.
 - **Prototype** ([src/](src/), [tests/](tests/)): Part 2, the triage pipeline and the CI safety test. See "Run it" below.
-- **[business-team.md](business-team.md)**: bringing the Customer Support team along (Part 3).
-- **[AI_LEVERAGE_LOG.md](AI_LEVERAGE_LOG.md)**: how AI was used, and where I overrode it.
+- **[business-team.md](business-team.md)**: Engaging and enlisting the end users.
+- **[AI_LEVERAGE_LOG.md](AI_LEVERAGE_LOG.md)**: Me, myself, and (A)I.
 
 ## Supporting Artifacts
 - **[CLAUDE.md](CLAUDE.md)**: the working constitution used to steer AI-assisted development.
