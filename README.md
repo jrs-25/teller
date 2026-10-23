@@ -2,10 +2,22 @@
 
 A prototype support triage & resolution agent for Customer Support. Teller sits beside the ticketing system: it reads each new ticket, decides what it is, and writes one internal note that leads with a one-line "why" (with a cited draft reply, a routing decision with context, or the reason it held back) for a human to act on. In v1, nothing reaches a member without a CSR sending it.
 
+## Deliverables
 - **[RFC.md](RFC.md)**: the design. Start here.
+- **Prototype** ([src/](src/), [tests/](tests/)): Part 2, the triage pipeline and the CI safety test. See "Run it" below.
+- **[business-team.md](business-team.md)**: bringing the Customer Support team along (Part 3).
 - **[AI_LEVERAGE_LOG.md](AI_LEVERAGE_LOG.md)**: how AI was used, and where I overrode it.
+
+## Supporting Artifacts
 - **[CLAUDE.md](CLAUDE.md)**: the working constitution used to steer AI-assisted development.
 - **[captains-log.md](captains-log.md)**: decision log and AI Leverage Log candidates.
+- **[RFC-Directors-Cut.md](RFC-Directors-Cut.md)**: Consider it the Zack Snyder cut that I pruned significantly into the RFC for theatrical release. Kept as a deeper dive artifact for future reference.
+
+## Visual aid
+
+![Teller demo harness: a routine question with Teller's internal note and the pipeline trace](docs/images/teller-demo-harness.png)
+
+A local demo harness over the real pipeline and mocks, used for the live session (not part of the submission). Left: the ticket inbox and controls for rollout stage and dependency failures. Middle: the ticket as a CSR sees it, with Teller's internal note and the CSR's own "Send reply" button. Right: what Teller saw after redaction and how each pipeline stage decided.
 
 ## Run it
 
@@ -35,7 +47,7 @@ python scripts/demo.py --notes   # run every fixture ticket and print what Telle
 
 ## The safety test
 
-[`tests/test_safety.py`](tests/test_safety.py) and [`tests/test_config.py`](tests/test_config.py) implement rules S1–S17 from RFC §5. Each assertion names the rule it guards, so a breach fails CI with a message like `S1: compliance or gray-zone decision carried a member-facing draft`.
+[`tests/test_safety.py`](tests/test_safety.py) and [`tests/test_config.py`](tests/test_config.py) implement rules S1–S18 from RFC §5. Each assertion names the rule it guards, so a breach fails CI with a message like `S1: compliance or gray-zone decision carried a member-facing draft`.
 
 **How we know the tests work:** each safety mechanism was broken on purpose, and the suite caught it.
 

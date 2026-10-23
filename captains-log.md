@@ -1,6 +1,6 @@
 # Captain's log
 
-Decisions, open questions, and AI Leverage Log candidates, recorded as the work happened.
+Decisions and AI Leverage Log candidates, recorded as the work happened.
 
 ## Decisions made
 - **Start with the RFC, then build from it.** The brief's RFC items mirror its prototype items, so the RFC doubles as the build spec: its schemas and safety rules (§5) became the code's interfaces and test names. The risk was polishing the RFC before code could expose its flaws, so the order was RFC draft → scaffold → safety test → revise the RFC from what the build showed (§5 "What building it changed").
@@ -34,10 +34,6 @@ Decisions, open questions, and AI Leverage Log candidates, recorded as the work 
 - **Degraded mode** (RFC §4): failure → write nothing, record reason; notes only when Teller has something useful (low confidence guess, gray flag, no KB answer). Prototype: mock deps that can fail; tests: KB down → no draft; compliance check down → no draft, but keyword-matched compliance still routes.
 - **Every outcome gets a note** (Joel, after seeing the demo; reverses "failures write nothing"): one internal note leading with a one-line WHY, for drafts, routes, gray, low confidence, no KB answer, ineligible, and dependency failures. Exceptions: `off` (kill switch = silence), `shadow` (fully invisible: no note, no tag; dedupe via decision record), already processed (no duplicates). Uncategorized stage is capped at the highest category stage so nothing leaks during blind shadow. (RFC §3, §4, S12, S17)
 - **Prototype must include:** a CI test that every ticketing adapter exposes only the allowed write methods, so a new adapter can't add a public reply (the RFC §3 promises this). Zendesk-shaped JSON fixtures (webhook, ticket API response) for routine, feedback, compliance, and a disguised compliance case, with fake canary account numbers.
-
-## Open questions
-- Stack confirm: Python + pydantic + pytest? Real Claude call optional behind an interface?
-- Author name for the RFC header.
 
 ## AI Leverage Log candidates (overrides and pushback)
 - Claude suggested writing RFC §1, 2, 4 first and deferring §3 because it "doesn't drive code." Joel pushed back. Looking again, rollout stage, kill switch, and system adapters *do* belong in the build contract, so §3's decisions moved up front.
