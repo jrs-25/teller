@@ -83,7 +83,7 @@ Some tickets should never be processed. Teller checks each one at validate, usin
 | It isn't in English | Out of scope for v1 (the brief excludes "every channel, language"). |
 | It has attachments | v1 doesn't read attachments. A compliance concern or sensitive financial document could be inside one ("see the attached letter from my lawyer"). |
 
-An ineligible ticket gets **no write at all**. It stays in the manual queue exactly as today, and Teller's decision record notes why. Because Teller sits beside the ticketing system (§3), stepping aside is always safe.
+An ineligible ticket gets **only a short note saying why Teller skipped it**: no draft, no move. It stays in the manual queue exactly as today. The note is useful on its own: "it has an attachment Teller can't read; check the attachment before replying." Because Teller sits beside the ticketing system (§3), stepping aside is always safe.
 
 ### Where the seam is, and why there
 
@@ -419,14 +419,35 @@ Moving from Zendesk to Salesforce Service Cloud, Freshdesk, or whatever a merger
 
 ### What Teller writes to the ticket
 
-Two things, nothing more:
+Two things, nothing more, and **for every outcome**: a CSR should never have to wonder whether Teller looked at a ticket, or why it did what it did.
 
-**1. The tag `teller_processed`.** It marks every ticket Teller touched, so Support can filter and report on Teller-touched tickets in the ticketing system's own tools. It is also the idempotency and loop guard. It reveals nothing about Teller's decision, so it's safe to add even in blind shadow mode.
+**1. One internal note, leading with a one-line "why".** Every ticket Teller processes gets one, whatever the outcome:
 
-**2. One internal note** (at `suggest` and `act`). Human review is the bottleneck, so the note is designed to make one approval fast and trustworthy:
+| Outcome | The "why" line (examples) |
+|---|---|
+| Draft | "Routine question, answered from knowledge base article kb-101 (confidence HIGH)." |
+| Route | "Compliance concern (keyword:cfpb). Routed to Compliance & Legal. No reply drafted." |
+| Gray zone | "POSSIBLE COMPLIANCE CONCERN (check:0.50). No draft. Review carefully." |
+| Low confidence | "Teller isn't confident about the category (best guess general_qa, 0.70). No draft." |
+| No KB answer | "Routine question, but no knowledge base article answers it. No draft." |
+| Ineligible | "Teller skipped this ticket: it has an attachment Teller can't read. Check the attachment before replying." |
+| Dependency failed | "Teller couldn't finish: the knowledge base was unavailable. No draft. Handle as usual." |
+
+**2. The tag `teller_processed`,** added with the note. Support can report on Teller-touched tickets in the ticketing system's own tools, and the tag is the idempotency and loop guard.
+
+**Three exceptions, each deliberate:**
+- **`off` posts nothing.** It is the kill switch; a kill switch that still writes isn't one.
+- **`shadow` posts nothing, not even the tag.** CSRs must not know shadow is happening, or their judgment is no longer an independent baseline. Teller avoids processing a shadow ticket twice by checking its own decision record instead of a tag. As a side effect, `teller_processed` means exactly "Teller did something visible," which keeps ticketing-system reports clean.
+- **Already processed posts nothing,** so duplicate webhooks never produce duplicate notes.
+
+Tickets Teller can't categorize (ineligible, or a failed dependency) use the `uncategorized_stage` setting, **capped at the highest stage of any category**, so while every category is in shadow, nothing Teller does appears on any ticket.
+
+The note is designed to make one approval fast and trustworthy:
 
 ```
 🤖 Teller · suggest · General Q&A · Confidence: HIGH        decision d-48213-01
+WHY: Routine question, answered from knowledge base article kb-101 (confidence HIGH).
+
 Based on the member's message(s) as of 2:03 PM. If the member has written
 since, this draft may be out of date.
 
@@ -475,7 +496,7 @@ Teller starts out doing nothing on a CSR's behalf. It earns each step with evide
 | `rollout_stage` | What Teller does | What the CSR sees | What it proves |
 |---|---|---|---|
 | `off` | Nothing | Nothing | |
-| `shadow` | Decides and records the decision privately | **Nothing** | Does Teller agree with what CSRs actually did on the same tickets? |
+| `shadow` | Decides and records the decision privately | **Nothing** (no note, no tag) | Does Teller agree with what CSRs actually did on the same tickets? |
 | `suggest` | Posts one internal note: category, draft, "suggest routing to X" | A suggestion to use or ignore | Do CSRs accept it? Is the draft sent unchanged, lightly edited, or rewritten? |
 | `act` | Routes and tags on its own; places the draft ready to send | Work already done. Routing can be undone in one click; every reply is still sent by a CSR | Does it hold up without a human doing the step first? |
 | `send` _(after v1)_ | Sends the reply to the member itself | Sent replies, sampled for review | Not for v1. Only for categories that have proven themselves at `act` |
@@ -516,7 +537,7 @@ Every call has a timeout. A dependency that keeps failing is skipped for a cool-
 | **Ticketing API: write** | The single update is all or nothing (§3), so a failure leaves the ticket untouched. Retry at most twice, then leave it. On rate limiting (`429`), back off. | No half-written tickets. |
 | **Member profile service** | _After v1; see below._ | |
 
-**What a failure looks like on the ticket: nothing.** When a dependency fails, Teller writes nothing and records the reason in its decision record. A note saying "Teller couldn't help" adds clutter without helping the CSR, who handles the ticket as today. Notes are reserved for cases where Teller has something useful to say (below).
+**What a failure looks like on the ticket: a short note.** When a dependency fails, Teller posts its note with no draft and no move, saying what failed ("Teller couldn't finish: the knowledge base was unavailable. No draft. Handle as usual."). The CSR handles the ticket as today, but knows Teller looked and why it didn't help. The exceptions: if the ticketing API itself is down there is nowhere to post, and in `shadow` or `off` nothing is posted (§3).
 
 ### When confidence is low
 
@@ -621,12 +642,12 @@ Each rule is a test in `tests/test_safety.py` or `tests/test_pipeline.py`. A fai
 | S9 | No configuration lets a compliance ticket reach `send_public_reply` | §3 |
 | S10 | Every config that breaks the safety floor fails to load | §1 |
 | S11 | The ticketing adapter exposes no member-visible write except the locked one | §3 |
-| S12 | An ineligible ticket gets no write at all | §1 |
+| S12 | An ineligible ticket gets only an explanatory note: no draft, no move | §1 |
 | S13 | If the ticket changed between read and write, the update is rejected; Teller reprocesses at most twice, then leaves it | §3 |
 | S14 | A ticket already tagged `teller_processed` is skipped | §3 |
 | S15 | No matching knowledge base article, or the knowledge base is down: no draft | §3, §4 |
 | S16 | Below the category's threshold: no draft | §4 |
-| S17 | `off` writes nothing; `shadow` writes only the `teller_processed` tag (no note, no move) | §3 |
+| S17 | `off` and `shadow` write nothing at all (no note, no tag); shadow tickets are processed once, using the decision record | §3 |
 | S18 | Every category's destination is an existing route; an unknown one fails at load | §3 |
 
 Plus the three required paths through one pipeline: a routine question gets a draft, product feedback is routed with a summary and a thank-you draft, and a compliance complaint is routed with no draft.
@@ -641,7 +662,8 @@ The prototype was built from this contract, and building it corrected the design
 - **Package fields are code, on purpose.** See "What does need code" in §1.
 - **Escalations with no category needed a rollout stage.** It is now an explicit setting (`uncategorized_stage`), not an implicit default.
 - **A keyword match can sit next to a low compliance-check score.** Correct (either check alone is enough), but confusing for a Compliance reader, so the note now says so.
-- **Shadow mode's write was ambiguous.** S17 now says exactly what shadow writes: the `teller_processed` tag and nothing else.
+- **Every outcome now gets a note (decided after the build).** The first version wrote nothing when Teller escalated for lack of a dependency or skipped an ineligible ticket, to avoid clutter. Seeing it run, that left CSRs unable to tell whether Teller had looked at a ticket at all. Now every outcome gets one note with a one-line "why", except `off`, `shadow`, and duplicates (§3).
+- **Shadow is fully invisible.** It no longer adds even the tag; tickets Teller can't categorize are capped at the highest category stage, so nothing leaks during a blind shadow period (S17).
 - **The safety test was itself tested.** Each safety mechanism (gate, redaction, keyword tripwire, send lock, safety floor) was removed on purpose; each removal failed the right tests (see README).
 
 ### Repo layout

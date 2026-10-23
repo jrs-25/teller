@@ -1,6 +1,6 @@
 # Teller
 
-A prototype support triage & resolution agent for Customer Support. Teller sits beside the ticketing system: it reads each new ticket, decides what it is, and writes one internal note (a cited draft reply, or a routing decision with context) for a human to act on. In v1, nothing reaches a member without a CSR sending it.
+A prototype support triage & resolution agent for Customer Support. Teller sits beside the ticketing system: it reads each new ticket, decides what it is, and writes one internal note that leads with a one-line "why" (with a cited draft reply, a routing decision with context, or the reason it held back) for a human to act on. In v1, nothing reaches a member without a CSR sending it.
 
 - **[RFC.md](RFC.md)**: the design. Start here.
 - **[AI_LEVERAGE_LOG.md](AI_LEVERAGE_LOG.md)**: how AI was used, and where I overrode it.

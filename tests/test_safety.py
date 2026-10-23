@@ -12,7 +12,7 @@ from conftest import FIXTURES, by_id, with_stage
 from teller import build_mock_teller
 from teller.errors import LockedOperation
 from teller.telemetry import log_event
-from teller.ticketing import ALLOWED_WRITES, PROCESSED_TAG, TicketingAdapter
+from teller.ticketing import ALLOWED_WRITES, TicketingAdapter
 
 # Fake sensitive values planted in the fixtures. They must never appear in any output.
 CANARIES = ["4417-2290-1183", "441722901183", "078-05-1120", "4111 1111 1111 1111", "4111111111111111"]
@@ -86,7 +86,9 @@ def test_s4_compliance_check_down_means_no_draft(teller):
     teller.compliance_check.available = False
     d = teller.process(by_id("routine_question"))
     assert d.draft is None, "S4: drafted while the compliance check was down"
-    assert teller.ticketing.updates == [], "S4: wrote to the ticket during a dependency failure"
+    [update] = teller.ticketing.updates
+    assert update.move_to is None and "compliance check was unavailable" in update.internal_note, \
+        "S4: a dependency failure must be explained in the note, with no draft and no move"
 
 
 def test_s4_keyword_compliance_still_routes_when_models_are_down(teller):
@@ -191,10 +193,12 @@ def test_s11_adapters_expose_no_other_member_visible_write():
 # -- S12-S17: what Teller writes, and when -----------------------------------------
 
 @pytest.mark.parametrize("name", ["has_attachment", "unverified_email", "agent_created", "not_english"])
-def test_s12_ineligible_tickets_get_no_write(teller, name):
+def test_s12_ineligible_tickets_get_only_an_explanatory_note(teller, name):
     d = teller.process(by_id(name))
-    assert not d.eligible
-    assert teller.ticketing.updates == [], f"S12: wrote to an ineligible ticket ({name})"
+    assert not d.eligible and d.draft is None
+    [update] = teller.ticketing.updates
+    assert update.move_to is None and "Teller skipped this ticket" in update.internal_note, \
+        f"S12: an ineligible ticket got more than an explanatory note ({name})"
 
 
 def test_s13_member_posts_between_read_and_write(teller):
@@ -239,11 +243,12 @@ def test_s15_no_knowledge_base_answer_means_no_draft(teller):
     assert "no_kb_answer" in d.reasons
 
 
-def test_s15_knowledge_base_down_means_no_draft_and_no_write(teller):
+def test_s15_knowledge_base_down_means_no_draft(teller):
     teller.knowledge_base.available = False
     d = teller.process(by_id("routine_question"))
     assert d.draft is None, "S15: drafted while the knowledge base was down"
-    assert teller.ticketing.updates == []
+    [update] = teller.ticketing.updates
+    assert "knowledge base was unavailable" in update.internal_note
 
 
 def test_s16_below_threshold_means_no_draft(teller):
@@ -257,10 +262,23 @@ def test_s17_off_writes_nothing(tickets, config):
     assert teller.ticketing.updates == [], "S17: wrote to a ticket while rollout_stage was off"
 
 
-def test_s17_shadow_writes_only_the_tag(tickets, config):
+def test_s17_shadow_writes_nothing_at_all(tickets, config):
+    # Every category in shadow: not even ineligible or failed tickets show a trace of Teller.
     teller = build_mock_teller(tickets, with_stage(config, "shadow"))
-    run_all(teller)
-    assert teller.ticketing.updates, "shadow should still tag processed tickets"
-    for u in teller.ticketing.updates:
-        assert u.internal_note is None and u.move_to is None and u.add_tags == [PROCESSED_TAG], \
-            "S17: shadow mode wrote something visible beyond the tag"
+    decisions = run_all(teller)
+    assert teller.ticketing.updates == [], "S17: shadow mode wrote something a CSR could see"
+    assert all("shadow_recorded" in d.reasons for d in decisions.values())
+
+
+def test_s17_shadow_is_processed_once_using_the_decision_record(tickets, config):
+    teller = build_mock_teller(tickets, with_stage(config, "shadow"))
+    teller.process(by_id("routine_question"))
+    second = teller.process(by_id("routine_question"))
+    assert "already_processed" in second.reasons, "S17: shadow processed the same ticket twice"
+
+
+def test_uncategorized_notes_never_more_visible_than_any_category(tickets, config):
+    # uncategorized_stage is `suggest`, but if no category is above shadow, it is capped.
+    teller = build_mock_teller(tickets, with_stage(config, "shadow"))
+    teller.process(by_id("has_attachment"))
+    assert teller.ticketing.updates == [], "an ineligible ticket revealed Teller during shadow"

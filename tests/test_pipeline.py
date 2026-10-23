@@ -45,7 +45,7 @@ def test_suggest_stage_notes_but_does_not_move(tickets, config):
     teller.process(by_id("compliance_explicit"))
     [update] = teller.ticketing.updates
     assert update.move_to is None
-    assert "Suggest routing to: compliance_legal_queue" in update.internal_note
+    assert "Suggest routing to Compliance & Legal" in update.internal_note
 
 
 def test_low_confidence_escalates_with_a_note_and_no_draft(teller):
@@ -59,8 +59,8 @@ def test_fraud_added_by_config_starts_in_shadow_and_never_drafts(teller):
     d = teller.process(by_id("suspected_fraud"))
     assert d.category == "suspected_fraud"
     assert d.draft is None
-    [update] = teller.ticketing.updates
-    assert update.add_tags == [PROCESSED_TAG] and update.internal_note is None and update.move_to is None
+    assert teller.ticketing.updates == []  # shadow is invisible; the decision is recorded
+    assert "shadow_recorded" in d.reasons
 
 
 def test_fraud_at_act_routes_to_fraud_ops(tickets, config):
@@ -68,3 +68,12 @@ def test_fraud_at_act_routes_to_fraud_ops(tickets, config):
     teller.process(by_id("suspected_fraud"))
     [update] = teller.ticketing.updates
     assert update.move_to == "fraud_ops_queue"
+
+
+def test_every_note_leads_with_why(teller):
+    for name in ["routine_question", "product_feedback", "compliance_explicit", "compliance_gray",
+                 "low_confidence", "no_kb_answer", "has_attachment"]:
+        teller.process(by_id(name))
+    assert len(teller.ticketing.updates) == 7
+    for u in teller.ticketing.updates:
+        assert u.internal_note.splitlines()[1].startswith("WHY: ")

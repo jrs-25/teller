@@ -24,8 +24,7 @@ from teller.redaction import redact
 from teller.telemetry import log_event
 from teller.ticketing import PROCESSED_TAG, TicketingAdapter
 
-# Escalations where a note helps the CSR. Dependency failures write nothing (RFC §4).
-NOTE_WORTHY = {"below_threshold", "no_category", "compliance_gray", "no_kb_answer", "gate_rejected"}
+STAGE_ORDER = ["off", "shadow", "suggest", "act", "send"]
 
 
 @dataclass
@@ -73,7 +72,8 @@ class Teller:
             config_version=self.config.version,
             model_version=f"{self.classifier.version}/{self.compliance_check.version}/{self.drafter.version}",
         )
-        if PROCESSED_TAG in intake.tags:
+        # Seen before: tagged (suggest and above) or recorded in shadow. Never post twice.
+        if PROCESSED_TAG in intake.tags or self._recorded_in_shadow(intake.ticket_id):
             d.reasons.append("already_processed")
             return d, None
 
@@ -81,7 +81,7 @@ class Teller:
         if ineligible:
             d.eligible = False
             d.reasons += ineligible
-            return d, None
+            return d, self._build_update(d, intake, None, False)
 
         # Redaction first: nothing below this line sees raw text.
         subject, body = redact(intake.subject), redact(intake.body)
@@ -92,8 +92,8 @@ class Teller:
             self.config.settings.compliance_check,
         )
         if d.compliance_zone == "unknown":
-            _escalate(d, "compliance_check_unavailable")  # fail closed, write nothing
-            return d, None
+            _escalate(d, "compliance_check_unavailable")  # fail closed: no draft
+            return d, self._build_update(d, intake, None, False)
 
         try:
             scores = self.classifier.scores(text, self.config.categories)
@@ -101,7 +101,7 @@ class Teller:
             scores = {}
             if d.compliance_zone != "clear":
                 _escalate(d, "classifier_unavailable")
-                return d, None
+                return d, self._build_update(d, intake, None, False)
 
         policy = self._resolve_policy(d, scores)
         if policy is not None and d.action == "none":
@@ -110,7 +110,6 @@ class Teller:
             HANDLERS[policy.action](ctx)
 
         gate.enforce(d, policy)
-        d.rollout_stage = policy.rollout_stage if policy else self.config.settings.uncategorized_stage
         found_sensitive = subject.found_sensitive_data or body.found_sensitive_data
         return d, self._build_update(d, intake, policy, found_sensitive)
 
@@ -163,23 +162,34 @@ class Teller:
 
     def _build_update(self, d: Decision, intake: Intake, policy: CategoryPolicy | None,
                       found_sensitive: bool) -> TicketUpdate | None:
+        """Every outcome gets one note with a short "why", except `off` (the kill switch
+        means silence) and `shadow` (blind: no note, no tag; the decision record is kept)."""
+        d.rollout_stage = policy.rollout_stage if policy else self._uncategorized_stage()
         stage = d.rollout_stage
         if stage == "off":
             d.reasons.append("stage:off")
             return None
-        if d.action == "escalate" and not (NOTE_WORTHY & set(d.reasons)):
-            return None  # a dependency failed: write nothing, the ticket stays manual
         if stage == "shadow":
-            return TicketUpdate(ticket_id=d.ticket_id, if_version=d.ticket_version,
-                                add_tags=[PROCESSED_TAG])
+            d.reasons.append("shadow_recorded")
+            return None
 
-        label = policy.id if policy else "uncategorized"
+        label = policy.id if policy else ("skipped" if not d.eligible else "uncategorized")
         note = render_note(d, intake, stage, label, found_sensitive,
                            article_dates(self.knowledge_base, d),
                            self.config.settings.knowledge_base.stale_after_days)
         move = d.destination if stage in ("act", "send") and d.action == "route_with_package" else None
         return TicketUpdate(ticket_id=d.ticket_id, if_version=d.ticket_version,
                             internal_note=note, add_tags=[PROCESSED_TAG], move_to=move)
+
+    def _uncategorized_stage(self) -> str:
+        """Tickets Teller can't categorize are never more visible than any category is.
+        While every category is in shadow, nothing Teller does shows on any ticket."""
+        highest = max((p.rollout_stage for p in self.config.categories.values()), key=STAGE_ORDER.index)
+        setting = self.config.settings.uncategorized_stage
+        return min(setting, highest, key=STAGE_ORDER.index)
+
+    def _recorded_in_shadow(self, ticket_id: str) -> bool:
+        return any(x.ticket_id == ticket_id and "shadow_recorded" in x.reasons for x in self.decisions)
 
     def _maybe_send(self, d: Decision) -> None:
         if d.rollout_stage != "send" or not d.draft:
