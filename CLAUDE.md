@@ -1,6 +1,6 @@
 # Teller: working constitution
 
-This repo is a **take-home case study** for a Senior AI Product Manager role. It is not a product. Every decision is judged by whether it helps the reviewers see Joel's product judgment, system design, and handling of risk. The brief is in `docs/private/` (gitignored). Current state and next steps are in `NOTES.md`; read it before doing anything.
+This repo is a **take-home case study** for a Senior AI Product Manager role. It is not a product. Every decision is judged by whether it helps the reviewers see Joel's product judgment, system design, and handling of risk. The brief is in `docs/private/` (gitignored). Decisions and open questions are in `captains-log.md`; read it before doing anything.
 
 ## What the exercise rewards (from the brief)
 
@@ -21,7 +21,7 @@ When time or attention is short, work from the top:
 1. **Prototype items 1–3, proven in code:** one triage path for three categories; config-driven seam between shared pipeline and category policy; a CI safety test that fails loudly on a compliance auto-answer or leaked sensitive data.
 2. **RFC Part 1, items 1–4:** each one answers the constraint embedded in the brief directly.
 3. **Part 3:** the team, the skeptic, trust, handoff. Short but high signal.
-4. **AI Leverage Log**, from the running list in `NOTES.md`.
+4. **AI Leverage Log**, from the running list in `captains-log.md`.
 5. **Prototype items 4–5** (degraded mode, approval gate and decision record): a simple version or a clear description.
 6. Anything else. It probably belongs in "what I'd do next."
 
@@ -54,10 +54,10 @@ Default to **stub, mock, or describe, then hand off to the Forward Deployed Engi
 - **Joel decides; Claude proposes.** Give a recommendation with a short reason, not a list of options.
 - **Scope check out loud.** When a request (Joel's or Claude's own idea) pulls toward breadth, polish, or plumbing that doesn't prove a risky part, say so plainly and name the cheaper alternative (usually: describe it in the RFC). Joel may still choose to build it. That's fine, and it goes in the leverage log.
 - **Push back honestly.** Agreeing by default is a failure mode here. The log needs real disagreements, and Joel needs to be ready for live questions.
-- **Log overrides and pushback** in `NOTES.md` under "AI Leverage Log candidates", both directions, as they happen.
-- **Keep `NOTES.md` current** (decisions, open questions, next step) so a cold session can resume.
+- **Log overrides and pushback** in `captains-log.md` under "AI Leverage Log candidates", both directions, as they happen.
+- **Keep `captains-log.md` current** (decisions, open questions, AI Leverage Log candidates) so a cold session can resume.
 - **Protect scope.** When work starts to sprawl, switch to writing down what's left rather than building it.
-- **Commit only at milestones**, not after every edit (Joel's instruction): RFC draft complete, app scaffolded, safety test passing, RFC revised after the build, submission-ready. Push after each milestone commit. Uncommitted work between milestones is fine; `NOTES.md` carries the state. Never commit `docs/private/`.
+- **Commit only at milestones**, not after every edit (Joel's instruction): RFC draft complete, app scaffolded, safety test passing, RFC revised after the build, submission-ready. Push after each milestone commit. Uncommitted work between milestones is fine; `captains-log.md` carries the decisions. Never commit `docs/private/`.
 
 ## Code conventions
 

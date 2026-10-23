@@ -217,11 +217,11 @@ Safety comes from **structure, not from a prompt behaving**. Every guarantee is 
 
 **Redaction is the first thing that touches the text.** Account numbers, card numbers, SSNs, and routing numbers are replaced with typed, numbered tokens (`[ACCOUNT_NUMBER_1]`) before any other stage runs. Everything after that, including the compliance checks, the classifier, the drafter, logs, and decision records, only ever sees tokens.
 
-- **Member data never reaches the model provider.** Only redacted text is sent to any model.
+- **Account, card, and Social Security numbers never reach the model provider.** Only redacted text is sent to any model. The prototype's patterns catch number-shaped data only: names, email addresses, street addresses, and dates of birth pass through to the model today. Covering those is the production redaction service's job (handoff below), and until it exists, no real model should be connected to member tickets.
 - **No new copies.** The real values already live in the ticketing system, and the CSR sees them there. Teller doesn't keep its own store of them.
 - **Logs carry IDs and decision fields, never text.** Ticket ID, decision ID, category, confidence, action, and timings. Not even redacted text goes into logs: redaction will miss things (an oddly formatted account number, an address, a member describing a medical bill), and logs are the most widely copied and widely readable place Teller writes. With no text in logs, a redaction miss has nowhere to leak, and the rule can be tested exactly. Debugging follows the ticket or decision ID to the access-controlled decision record or the ticket itself.
 - **Traces follow the same rule as logs.** Spans carry IDs and timings only. This matters for AI systems in particular: LLM tracing and observability tools record full prompts and responses by default, which would quietly copy text into another vendor's system. Prompt and response capture is turned off; the decision record is the one place that holds what Teller read.
-- **Context packages are built, not stripped.** A package for a receiving team is assembled field by field from the category's `package_fields` allowlist. Anything not listed is never added, so a new field can't leak by accident.
+- **Context packages are built, not stripped.** A package for a receiving team is assembled field by field from the category's `package_fields` allowlist. Anything not listed is never added, so a new field can't leak by accident. One known gap: the prototype's `summary` field is the start of the member's redacted message, so it carries whatever the member wrote apart from number patterns (a name, for example). In production the summary should be generated from the redacted text rather than quoted. That matters most when the receiving team works outside the ticketing system, because then the summary is a new copy of member data.
 - **If redaction fails, Teller stops.** The ticket stays in the manual queue. Teller never skips ahead with raw text.
 - **Member profile data (after v1; designed now).** The profile service holds most of what the brief calls "financial details, account specifics." When Teller starts using it (§3), it fetches an **allowlist of fields**: account flags (open dispute, legal hold, fraud hold, deceased) and product types. Never balances, account numbers, or transaction details, because Teller has no use for them. These fields are labels, not sensitive values, so they may inform the classifier and drafter, but they follow the same rules as everything else: never in logs or traces, never in a context package unless that category's `package_fields` allowlists them, and never quoted in a draft.
 
@@ -285,10 +285,10 @@ Fixtures cover a routine question, product feedback, an explicit compliance comp
 
 ### Handoff to Forward Deployed Engineering
 
-- A production-grade redaction service (more data types, tested against real ticket samples) in place of the prototype's patterns.
+- A production-grade redaction service in place of the prototype's number patterns: names, email addresses, street addresses, dates of birth, and phone numbers, tested against real ticket samples. This is a precondition for connecting a real model.
 - Log and tracing configuration that enforces "IDs, not text" at the platform level too, including prompt capture turned off in any LLM observability tool.
 - Model provider terms: no training on Teller's data, minimal retention.
-- Retention policy for decision records, agreed with Compliance.
+- Confirm the proposed retention default for decision records (§5) with Compliance & Legal, and build the durable store and the approval join.
 
 ## 3. Extending the workflow, not replacing the safety net
 
@@ -324,10 +324,10 @@ redacted text → KB adapter: search(query) → top few articles
 
 - **Wrap the existing search, don't ingest.** Building Teller's own index (chunking, embeddings, keeping it in sync as articles change, evaluating retrieval) is a project of its own. v1 calls the help center's existing search API through a KB adapter with one method, `search(query)`. Like the ticketing adapter, it is the only vendor-specific part.
 - **No article, no draft.** If no article is relevant enough, Teller escalates to a human with "no KB answer found" in the note. This is the "never fabricate an answer" guarantee, and it makes weak search a *usefulness* problem, not a safety problem: a missed article costs an escalation, not a made-up reply.
-- **Every draft cites its sources.** The gate rejects a draft that cites no retrieved article or links anywhere else. Whether a draft is faithful to its article can't be fully checked in code; in v1 the CSR checks it, and the note shows the source to make that quick.
+- **Every draft cites its sources.** The gate rejects a draft that cites no retrieved article (built). Checking that a draft's links point only to the retrieved articles is part of the link allowlist in §2 (described, not built). Whether a draft is faithful to its article can't be fully checked in code; in v1 the CSR checks it, and the note shows the source to make that quick.
 - **Stale articles are the bigger risk.** Knowledge bases drift out of date. Today an experienced CSR often knows an article is wrong and works around it. With Teller, a stale article becomes a confident, well-written draft *with a citation*, which looks more trustworthy, not less, and it reaches more members faster. So:
   - **Show the article's age, and warn when it's old.** The note shows each source's last-updated date, and "Check before sending" warns when an article is older than a set age (for example, six months).
-  - **Never quote time-sensitive numbers.** Rates, APYs, and fees change constantly. A draft links to the live source instead of stating a figure, and if the answer *is* the figure, Teller escalates.
+  - **Never quote time-sensitive numbers** _(described, not built)_. Rates, APYs, and fees change constantly. A draft links to the live source instead of stating a figure, and if the answer *is* the figure, Teller escalates.
   - **Check knowledge base health before general Q&A leaves shadow.** Shadow mode shows which articles Teller would rely on most. Their owners review those first, before `general_qa` moves to `suggest`. That makes the KB owners stakeholders in the rollout and turns an unknown risk into a launch checklist item.
   - Later, in the logging and reporting work: articles behind drafts that CSRs often rewrite or flag go on a "possibly outdated" list for their owners.
 - **Public help center only in v1.** Help-center articles are written for members, so quoting them is safe. Internal policy docs may contain things members shouldn't see, so adding them needs its own review.
@@ -527,7 +527,7 @@ Because Teller sits beside the ticketing system (§3), **doing nothing is always
 
 ### When a dependency is slow or down
 
-Every call has a timeout. A dependency that keeps failing is skipped for a cool-down period (a circuit breaker), so a slow service causes fast fallbacks instead of a pile-up.
+Every call has a timeout. A dependency that keeps failing is skipped for a cool-down period (a circuit breaker), so a slow service causes fast fallbacks instead of a pile-up. _(Timeouts and the circuit breaker are described, not built: the prototype simulates outages with on/off switches on each mock dependency, and the fallbacks below are built and tested.)_
 
 | Dependency | If it's slow or down | What still works |
 |---|---|---|
@@ -605,12 +605,19 @@ class Decision:
     requires_human_approval: bool        # always True in v1
     rollout_stage: str
     reasons: list[str]                   # why: "below_threshold", "kb_unavailable", "gate:token_in_draft", ...
+    redacted_text: str | None            # what Teller read, after redaction (None if it never read the text)
     config_version: str
     model_version: str
     created_at: datetime
 ```
 
-**Who approved it** lives in the ticketing system: the CSR who sent the reply, and when. The decision record joins to it by `ticket_id`. Together they answer the brief's question: why this intake was answered, routed, or escalated, and who approved it.
+### Explaining a decision later: where records land, who approved, how long they're kept
+
+The brief asks that a Support lead, or an AI agent, can later answer *why* an intake was answered, routed, or escalated, *and who approved it*.
+
+- **Why** is in the decision record: category, confidence, compliance signals, reasons, gate results, versions, and the redacted text Teller read. In the prototype it's an in-memory list. In production it lands in an append-only, access-controlled table keyed by ticket ID and decision ID, readable by the Support lead, Compliance & Legal, and a read-only API for an AI agent.
+- **Who approved it** is in the ticketing system, which already records who sent each public reply and when. A follow-up job (described, not built) listens for the CSR's reply on Teller-touched tickets and adds it to the decision record: who sent it, when, and whether the draft was sent unchanged, edited, or rewritten. That join is also what the promotion criteria in §3 measure.
+- **How long it's kept.** Proposed default, for Compliance & Legal to confirm: a decision record is kept exactly as long as its ticket. The ticket is the system of record, and the record means nothing without it, so it shouldn't outlive it. Compliance-flagged decisions follow whatever longer hold Compliance places on the ticket. Because records hold only redacted data, keeping them carries no more risk than keeping the ticket itself.
 
 ### What Teller writes: one `TicketUpdate`
 
@@ -651,6 +658,18 @@ Each rule is a test in `tests/test_safety.py` or `tests/test_pipeline.py`. A fai
 | S18 | Every category's destination is an existing route; an unknown one fails at load | §3 |
 
 Plus the three required paths through one pipeline: a routine question gets a draft, product feedback is routed with a summary and a thank-you draft, and a compliance complaint is routed with no draft.
+
+### Why the prototype has no real model call
+
+The classifier, compliance check, and drafter are rules and templates behind model-shaped interfaces (`Classifier`, `ComplianceCheck`, `Drafter`). That was a deliberate scope decision, not an omission. The brief allows it ("a couple of rules, or a single well-prompted model call, is plenty") and evaluates the architecture around the model, and wiring up a model well (prompting, structured output, refusals, recorded responses) is a project of its own.
+
+It still de-risks what matters, arguably better than a live call would:
+
+- **Safety is proven against adversarial stand-ins, on every run.** A real model misbehaves rarely and unpredictably, so a passing run proves little. The tests *force* the bad cases: a classifier that calls everything routine, a handler that drafts for compliance, a drafter that leaks a redaction token, every dependency failing. The gate, the safety floor, and the fail-closed paths have to hold against all of them.
+- **A real model drops in without touching the safety design.** It would sit behind the same interface, and its output would pass through the same gate.
+- **CI stays deterministic and needs no API key.**
+
+What it does *not* prove, stated plainly: how a real model fails in practice (malformed output, citing an article it wasn't given, slow responses, plausible but wrong facts). The design's answers are already in place (any malformed or unverifiable output is treated as a failed dependency: no draft; the gate requires citations; made-up facts are caught by human review in v1), and adding a real drafter, with tests that feed it bad output, is the first item in §7.4.
 
 **Described, not built:** the prompt-injection link check (§2), the category regression check (§1), the member profile service (§3), the durable queue and sweep (§3), measuring agreement and promotion (§3).
 
@@ -699,7 +718,7 @@ In rough priority order:
 1. **Settle the compliance line with Compliance & Legal** (§0.3): their criteria, keyword list, and labeled gray cases, then tune the bands.
 2. **Member profile service** (§3): account flags (open dispute, legal hold) as a second, non-wording compliance signal, and the path to resolving account issues, likely the biggest gap to 80%. Data and failure rules are already designed (§2, §4).
 3. **Logging and reporting:** shadow-vs-CSR agreement, draft edit rates, a permanent blind holdout, rubber-stamping signals, and a "possibly outdated" article list for KB owners. Most outcome reporting can come from the ticketing system itself, compared on `teller_processed`.
-4. **Real models behind the existing interfaces,** with an evaluation set built from the labeled tickets, and the regression check for category changes (§1).
+4. **Real models behind the existing interfaces,** starting with the drafter (where model output becomes member-facing text): structured output with cited article IDs, malformed or unverifiable output treated as a failed dependency, and recorded responses so tests and demos stay deterministic. Then an evaluation set built from the labeled tickets, and the regression check for category changes (§1).
 5. **Production plumbing for FDE:** durable queue and sweep behind the webhook, a production redaction service, the prompt-injection link check (§2), and log and tracing configuration.
 6. **Follow-up messages:** rerun the compliance checks when a member adds a message to a Teller-touched ticket.
 7. **Knowledge base ingestion,** only if "no KB answer" escalations turn out to be what stands between Teller and 80% (§3).

@@ -1,21 +1,12 @@
-# Working notes (resume here)
+# Captain's log
 
-## Plan
-1. RFC draft, section by section (Claude proposes decisions, Joel accepts or overrides) ← **in progress**
-2. App scaffold (Python, pydantic, pytest; rules or mock classifier by default so CI needs no API keys)
-3. ~~Create the GitHub repo (account `jrs-25`) and push~~ Done early on 2026-10-22: https://github.com/jrs-25/teller (**private**). Push as we go. At submission, run `gh repo edit --visibility public` or add the reviewers as collaborators. The brief is in `docs/private/`, which is gitignored.
-4. Revise the RFC after the build; write §3 rollout narrative, §6 (Part 3), and the AI Leverage Log
-
-## Status
-- [x] RFC §0–§7 drafted and revised after the build (§5 "What building it changed")
-- [x] Prototype: scaffold, safety test (55 tests, mutation-checked), note on every outcome, routes in config, `suspected_fraud` config-only commit
-- [x] AI_LEVERAGE_LOG.md drafted
-- Parked: logging & reporting bucket (see Decisions; now RFC §7 item 3)
-
-**Next step (resume here):** Joel's review pass: fill in the RFC Author field; rewrite §6 (Part 3) and AI_LEVERAGE_LOG.md in Joel's own voice; read the RFC end to end for anything Joel can't defend live; decide when to make the repo public or add reviewers (`gh repo edit --visibility public`).
+Decisions, open questions, and AI Leverage Log candidates, recorded as the work happened.
 
 ## Decisions made
+- **Start with the RFC, then build from it.** The brief's RFC items mirror its prototype items, so the RFC doubles as the build spec: its schemas and safety rules (§5) became the code's interfaces and test names. The risk was polishing the RFC before code could expose its flaws, so the order was RFC draft → scaffold → safety test → revise the RFC from what the build showed (§5 "What building it changed").
 - Classify, then apply policy. The model never chooses the action.
+- **Pre-lock review, then the prototype is locked** (Joel). Reviewed the prototype against the brief and CLAUDE.md. Fixed: RFC overstated redaction (only number patterns are caught; names, emails, addresses, DOB are a production-redaction precondition for any real model); decision record now holds the redacted text Teller read; timeouts, circuit breaker, link check, and "never quote rates" marked described-not-built; added where records land, who approved (join to the CSR's send), and a proposed retention default (as long as the ticket); flagged that the package `summary` quotes the member. Left as-is (Joel): phone numbers labeled as account numbers, placeholder confidence formula, in-memory decision store, no webhook timestamp freshness check, the post-v1 `send` path.
+- **No real model call in the prototype** (Joel, after weighing it). Rules and templates sit behind model-shaped interfaces; safety is proven against adversarial stand-ins that force the bad cases on every run, which a live model can't do. A real drafter is the first "next" item. Building it now would have been an LLM rabbit hole relative to what the brief evaluates. (RFC §5 "Why the prototype has no real model call", §7.4)
 - The seam is at policy resolution. Categories are YAML entries that pick from fixed handlers (`draft_response`, `route_with_package`, `escalate`).
 - Per-category fields: action, member_response_allowed, destination, package_fields (allowlist), confidence_threshold, precedence, rollout_stage, owner.
 - v1: one primary category per intake, chosen by precedence. Secondary tags deferred.
@@ -63,5 +54,6 @@
 - Joel sensed something essential was missing about the member profile service (named twice in the brief). Claude had let it drop to "not in v1" without stating the cost; the gap was that it's the path to resolving account issues and so to the 80% goal. Kept out of v1, but the RFC now states the cost and designs its data and failure rules.
 - Claude checked its own safety tests by breaking each mechanism on purpose (gate, redaction, tripwire, send lock, safety floor) and confirming the right tests fail. The first attempt gave a false alarm caused by stale Python bytecode (a same-length edit restored within one second); Claude caught it, cleared the cache, and reran cleanly.
 - After using the demo, Joel decided Teller must post a note with a short "why" for every outcome, so CSRs always know it ran. Claude agreed and proposed three exceptions; Joel tightened one: shadow posts nothing at all (Claude had suggested a decision-free note), because users must not know shadow is happening. Claude added a cap so uncategorized tickets can't leak Teller's presence during shadow.
+- Claude recommended adding one real LLM call for the drafter, arguing reviewers would push on unproven real-model risks. Joel stopped the build partway: given the scope, it would read as going down an LLM rabbit hole. Instead the RFC explains why adversarial stand-ins de-risk the safety design better than a live call, and states plainly what they don't prove.
 - Joel had Claude turn the brief into a working constitution (`CLAUDE.md`, committed for reviewers): priority order, a "build test" defaulting to stub/describe/hand off, and a standing instruction to call out scope creep and push back. First application: Claude flagged that the webhook endpoint itself is plumbing; the value is in fetch-on-read, re-read before write-back, and the loop/idempotency guard.
 - Joel chose to write the RFC first as the build spec. Claude agreed but flagged the risk of over-polishing it and added a "prototype contract" section to connect the RFC to the code.

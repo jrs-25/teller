@@ -282,3 +282,9 @@ def test_uncategorized_notes_never_more_visible_than_any_category(tickets, confi
     teller = build_mock_teller(tickets, with_stage(config, "shadow"))
     teller.process(by_id("has_attachment"))
     assert teller.ticketing.updates == [], "an ineligible ticket revealed Teller during shadow"
+
+
+def test_decision_record_holds_what_teller_read_redacted(teller):
+    d = teller.process(by_id("compliance_explicit"))
+    assert "[ACCOUNT_NUMBER_1]" in d.redacted_text, "decision record should hold the redacted text Teller read"
+    assert "4417-2290-1183" not in d.redacted_text, "S5: raw account number in the decision record"

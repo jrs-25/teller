@@ -71,6 +71,7 @@ class Decision(BaseModel):
     requires_human_approval: bool = True
     rollout_stage: Stage | None = None
     reasons: list[str] = []
+    redacted_text: str | None = None  # what Teller read, after redaction
     config_version: str = ""
     model_version: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

@@ -86,6 +86,7 @@ class Teller:
         # Redaction first: nothing below this line sees raw text.
         subject, body = redact(intake.subject), redact(intake.body)
         text = f"{subject.text}\n{body.text}"
+        d.redacted_text = text  # the decision record holds what Teller read, never raw text
 
         d.compliance_zone, d.compliance_signals = assess(
             text, self.config.compliance_keywords, self.compliance_check,

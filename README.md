@@ -5,7 +5,7 @@ A prototype support triage & resolution agent for Customer Support. Teller sits 
 - **[RFC.md](RFC.md)**: the design. Start here.
 - **[AI_LEVERAGE_LOG.md](AI_LEVERAGE_LOG.md)**: how AI was used, and where I overrode it.
 - **[CLAUDE.md](CLAUDE.md)**: the working constitution used to steer AI-assisted development.
-- **[NOTES.md](NOTES.md)**: decision log and AI Leverage Log candidates.
+- **[captains-log.md](captains-log.md)**: decision log and AI Leverage Log candidates.
 
 ## Run it
 
