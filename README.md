@@ -4,7 +4,7 @@ A prototype support triage & resolution agent for Customer Support. Teller sits 
 
 ## Deliverables
 - **[RFC.md](RFC.md)**: The TL;DR-ish. Start here.
-- **Prototype** ([src/](src/), [tests/](tests/)): Part 2, the triage pipeline and the CI safety test. See "Run it" below.
+- **Prototype** ([src/](src/), [tests/](tests/)): Triage pipeline and the CI safety test. See "Run it" below.
 - **[business-team.md](business-team.md)**: Engaging and enlisting the end users.
 - **[AI_LEVERAGE_LOG.md](AI_LEVERAGE_LOG.md)**: Me, myself, and (A)I.
 
